@@ -1,0 +1,43 @@
+plugins {
+    id "com.dorongold.task-tree" version "1.2.2"
+    id "org.jetbrains.kotlin.jvm" version "1.1.2"
+}
+
+allprojects {
+    group "uchuhimo"
+    version "0.1"
+
+    repositories {
+        //mavenCentral()
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public" }
+        jcenter()
+    }
+    
+    task wrapper(type: Wrapper) {
+        gradleVersion = "3.2"
+        distributionType = Wrapper.DistributionType.ALL
+    }
+}
+
+subprojects {
+    apply plugin: "java"
+    apply plugin: "kotlin"
+
+    sourceCompatibility = 1.8
+
+    dependencies {
+        compile 'org.jetbrains.kotlin:kotlin-stdlib-jre8'
+        compile 'org.jetbrains.kotlin:kotlin-reflect'
+        testCompile 'org.jetbrains.kotlin:kotlin-test'
+        testCompile 'org.jetbrains.kotlin:kotlin-test-junit'
+        testCompile 'junit:junit:4.12'
+    }
+
+    tasks.withType(JavaCompile) {
+        options.encoding = "UTF-8"
+    }
+
+    tasks.withType(Test) {
+        testLogging.showStandardStreams = true
+    }
+}
