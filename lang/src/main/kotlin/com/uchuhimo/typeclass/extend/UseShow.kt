@@ -2,7 +2,6 @@ package com.uchuhimo.typeclass.extend
 
 import com.uchuhimo.typeclass.Base
 import com.uchuhimo.typeclass.Derived
-import com.uchuhimo.typeclass.Show
 
 interface Loggable {
     fun show(): String
@@ -12,89 +11,83 @@ interface Loggable {
     }
 }
 
+abstract class LoggableExtend<out T>(self: T) : Loggable, Self<T>(self)
+
 class LoggableClass : Loggable {
     override fun show(): String = "loggable"
 }
 
-infix fun <T> T.extend(s: Show<T>): Loggable = object : Loggable {
-    override fun show(): String = s.show(this@extend)
+val loggableForString: String.() -> LoggableExtend<String> = {
+    object : LoggableExtend<String>(this) {
+        override fun show(): String = self
+    }
 }
-
-val showString: Show<String> get() = object : Show<String> {
-    override fun show(f: String): String = f
-}
-
-val String.extendShow get() = this extend showString
 
 fun String.log() {
-    this.extendShow.log()
+    this.loggableForString().log()
 }
 
-val showBaseList: Show<List<Base>> get() = object : Show<List<Base>> {
-    override fun show(f: List<Base>): String = "base list"
+val loggableForBaseList: List<Base>.() -> LoggableExtend<List<Base>> = {
+    object : LoggableExtend<List<Base>>(this) {
+        override fun show(): String = "base list"
+    }
 }
-
-val List<Base>.extendShow
-    @JvmName("extendShowForBaseList")
-    get() = this extend showBaseList
 
 @JvmName("logForBaseList")
 fun List<Base>.log() {
-    this.extendShow.log()
+    this.loggableForBaseList().log()
 }
 
-val showDerivedList: Show<List<Derived>> get() = object : Show<List<Derived>> {
-    override fun show(f: List<Derived>): String = "derived list"
+val loggableForDerivedList: List<Derived>.() -> LoggableExtend<List<Derived>> = {
+    object : LoggableExtend<List<Derived>>(this) {
+        override fun show(): String = "derived list"
+    }
 }
-
-val List<Derived>.extendShow
-    @JvmName("extendShowForDerivedList")
-    get() = this extend showDerivedList
 
 @JvmName("logForDerivedList")
 fun List<Derived>.log() {
-    this.extendShow.log()
+    this.loggableForDerivedList().log()
 }
 
 interface Walker {
     fun walk()
 }
 
-interface Walk<Self> {
-    fun walk(self: Self)
-}
+abstract class WalkerExtend<out T>(self: T) : Walker, Self<T>(self)
 
-infix fun <T> T.extend(w: Walk<T>): Walker = object : Walker {
-    override fun walk() {
-        w.walk(this@extend)
+val walkerForString: String.() -> WalkerExtend<String> = {
+    object : WalkerExtend<String>(this) {
+        override fun walk() {
+            println("walk: $self")
+        }
     }
 }
-
-val walkForString: Walk<String> = object : Walk<String> {
-    override fun walk(self: String) {
-        println("walk: $self")
-    }
-}
-
-interface LoggableWalker : Loggable, Walker
-
-fun <T> T.extend(s: Show<T>, w: Walk<T>): LoggableWalker =
-        object : LoggableWalker,
-                Loggable by extend(s),
-                Walker by extend(w) {}
 
 fun main(args: Array<String>) {
-    "test".extend(showString).log()
-    "test".extendShow.log()
+    "test".extend(loggableForString).log()
+    "test".loggableForString().log()
     "test".log()
-    listOf(Base(), Base()).extendShow.log()
+    listOf(Base(), Base()).loggableForBaseList().log()
     listOf(Base(), Base()).log()
-    listOf(Derived(), Derived()).extendShow.log()
+    listOf(Derived(), Derived()).loggableForDerivedList().log()
+    listOf(Derived(), Derived()).loggableForBaseList().log()
     listOf(Derived(), Derived()).log()
     LoggableClass().log()
 
-    "test".extend(walkForString).walk()
-    val extendString = "test".extend(showString, walkForString)
+    walkerForString("test").walk()
+    "test".extend(walkerForString).walk()
+    val extendString = "test".extend {
+        object : Self<String>(this),
+                Walker by walkerForString(this),
+                Loggable by loggableForString(this) {}
+    }
     extendString.log()
     extendString.walk()
+    println(extendString.self.length)
+    val multiExtend = { it: String ->
+        object : Self<String>(it),
+                Walker by walkerForString(it),
+                Loggable by loggableForString(it) {}
+    }
+    "test".extend(multiExtend).walk()
 }
