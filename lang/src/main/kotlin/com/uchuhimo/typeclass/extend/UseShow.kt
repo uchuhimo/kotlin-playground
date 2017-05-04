@@ -11,7 +11,7 @@ interface Loggable {
     }
 }
 
-abstract class LoggableExtend<out T>(self: T) : Loggable, Self<T>(self)
+abstract class LoggableExtend<out T>(self: T) : Self<T>(self), Loggable
 
 class LoggableClass : Loggable {
     override fun show(): String = "loggable"
@@ -53,7 +53,7 @@ interface Walker {
     fun walk()
 }
 
-abstract class WalkerExtend<out T>(self: T) : Walker, Self<T>(self)
+abstract class WalkerExtend<out T>(self: T) : Self<T>(self), Walker
 
 val walkerForString: String.() -> WalkerExtend<String> = {
     object : WalkerExtend<String>(this) {
@@ -63,19 +63,35 @@ val walkerForString: String.() -> WalkerExtend<String> = {
     }
 }
 
+abstract class LoggableWalkerExtend<out T>(self: T) : Self<T>(self), Loggable, Walker
+
+fun <T> mix(
+        loggable: T.() -> LoggableExtend<T>,
+        walker: T.() -> WalkerExtend<T>)
+        : T.() -> LoggableWalkerExtend<T> = {
+    object : LoggableWalkerExtend<T>(this),
+            Loggable by loggable(this),
+            Walker by walker(this) {}
+}
+
 fun main(args: Array<String>) {
     "test".extend(loggableForString).log()
     "test".loggableForString().log()
     "test".log()
+
     listOf(Base(), Base()).loggableForBaseList().log()
     listOf(Base(), Base()).log()
+
     listOf(Derived(), Derived()).loggableForDerivedList().log()
-    listOf(Derived(), Derived()).loggableForBaseList().log()
     listOf(Derived(), Derived()).log()
+    listOf(Derived(), Derived()).extend(loggableForBaseList).log()
+    listOf(Derived(), Derived()).loggableForBaseList().log()
+
     LoggableClass().log()
 
     walkerForString("test").walk()
     "test".extend(walkerForString).walk()
+
     val extendString = "test".extend {
         object : Self<String>(this),
                 Walker by walkerForString(this),
@@ -84,10 +100,27 @@ fun main(args: Array<String>) {
     extendString.log()
     extendString.walk()
     println(extendString.self.length)
-    val multiExtend = { it: String ->
-        object : Self<String>(it),
-                Walker by walkerForString(it),
-                Loggable by loggableForString(it) {}
+
+    val extendString2 = "test".extend(mix(loggableForString, walkerForString))
+    extendString2.log()
+    extendString2.walk()
+    println(extendString2.self.length)
+
+    val multiExtend = { self: String ->
+        object : Self<String>(self),
+                Walker by walkerForString(self),
+                Loggable by loggableForString(self) {}
     }
     "test".extend(multiExtend).walk()
+
+    val multiExtend2 = { self: String ->
+        object : Self<String>(self), Walker, Loggable {
+            override fun show(): String = self
+
+            override fun walk() {
+                println("walk: $self")
+            }
+        }
+    }
+    "test".extend(multiExtend2).log()
 }
