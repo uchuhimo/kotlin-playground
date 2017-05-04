@@ -56,6 +56,33 @@ fun List<Derived>.log() {
     this.extendShow.log()
 }
 
+interface Walker {
+    fun walk()
+}
+
+interface Walk<Self> {
+    fun walk(self: Self)
+}
+
+infix fun <T> T.extend(w: Walk<T>): Walker = object : Walker {
+    override fun walk() {
+        w.walk(this@extend)
+    }
+}
+
+val walkForString: Walk<String> = object : Walk<String> {
+    override fun walk(self: String) {
+        println("walk: $self")
+    }
+}
+
+interface LoggableWalker : Loggable, Walker
+
+fun <T> T.extend(s: Show<T>, w: Walk<T>): LoggableWalker =
+        object : LoggableWalker,
+                Loggable by extend(s),
+                Walker by extend(w) {}
+
 fun main(args: Array<String>) {
     "test".extend(showString).log()
     "test".extendShow.log()
@@ -65,4 +92,9 @@ fun main(args: Array<String>) {
     listOf(Derived(), Derived()).extendShow.log()
     listOf(Derived(), Derived()).log()
     LoggableClass().log()
+
+    "test".extend(walkForString).walk()
+    val extendString = "test".extend(showString, walkForString)
+    extendString.log()
+    extendString.walk()
 }
