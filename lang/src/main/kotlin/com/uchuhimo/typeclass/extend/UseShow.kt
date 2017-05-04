@@ -17,9 +17,9 @@ class LoggableClass : Loggable {
     override fun show(): String = "loggable"
 }
 
-val loggableForString: String.() -> LoggableExtend<String> = {
+val loggableForString: String.() -> LoggableExtend<String> = outer@ {
     object : LoggableExtend<String>(this) {
-        override fun show(): String = self
+        override fun show(): String = this@outer
     }
 }
 
