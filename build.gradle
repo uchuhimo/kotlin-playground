@@ -29,11 +29,11 @@ subprojects {
     sourceCompatibility = 1.8
 
     dependencies {
-        compile 'org.jetbrains.kotlin:kotlin-stdlib-jre8'
-        compile 'org.jetbrains.kotlin:kotlin-reflect'
-        testCompile 'org.jetbrains.kotlin:kotlin-test'
-        testCompile 'org.jetbrains.kotlin:kotlin-test-junit'
-        testCompile 'junit:junit:4.12'
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jre8"
+        compile "org.jetbrains.kotlin:kotlin-reflect"
+        testCompile "org.jetbrains.kotlin:kotlin-test"
+        testCompile "org.jetbrains.kotlin:kotlin-test-junit"
+        testCompile "junit:junit:4.12"
     }
 
     tasks.withType(JavaCompile) {

@@ -1,10 +1,10 @@
 pluginRepositories {
     maven {
-        url 'http://maven.aliyun.com/nexus/content/repositories/gradle-plugin'
+        url "http://maven.aliyun.com/nexus/content/repositories/gradle-plugin"
     }
     gradlePluginPortal()
 }
 
-rootProject.name = 'kotlin-playground'
+rootProject.name = "kotlin-playground"
 
-include 'lang', 'coroutines'
+include "lang", "coroutines"
