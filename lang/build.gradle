@@ -1,0 +1,5 @@
+dependencies {
+    compile "org.openjdk.jol:jol-core:0.8"
+    compile "org.openjdk.jol:jol-samples:0.8"
+    compile "com.lmax:disruptor:3.3.6"
+}
