@@ -4,6 +4,21 @@ import com.lmax.disruptor.SingleProducerSequencer
 import org.openjdk.jol.info.ClassLayout
 import org.openjdk.jol.samples.*
 import org.openjdk.jol.vm.VM
+import java.util.concurrent.atomic.AtomicLong
+
+data class TestFieldReorder(
+        val a: Int, val b: Int,
+        val c: Long, val d: Int)
+
+class VolatileLong {
+    @Volatile var value = 0L
+    var p1: Long = 0
+    var p2: Long = 0
+    var p3: Long = 0
+    var p4: Long = 0
+    var p5: Long = 0
+    var p6: Long = 0
+}
 
 fun main(args: Array<String>) {
     JOLSample_01_Basic.main(args)
@@ -40,4 +55,10 @@ fun main(args: Array<String>) {
     JOLSample_24_Difference.main(args)
     JOLSample_25_ArrayAlignment.main(args)
     JOLSample_26_Hotspot.main(args)
+
+    println(ClassLayout.parseClass(TestFieldReorder::class.java).toPrintable())
+    println(ClassLayout.parseClass(VolatileLong::class.java).toPrintable())
+    println(ClassLayout.parseClass(VolatileLongInJava::class.java).toPrintable())
+    println(ClassLayout.parseClass(AtomicLong::class.java).toPrintable())
+    println(ClassLayout.parseClass(PaddedAtomicLong::class.java).toPrintable())
 }
