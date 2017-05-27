@@ -14,4 +14,8 @@ fun main(args: Array<String>) {
     run { // doc here
         println("just a block")
     }
+    val outerC = {
+        3
+    }()
+    println(outerC)
 }
