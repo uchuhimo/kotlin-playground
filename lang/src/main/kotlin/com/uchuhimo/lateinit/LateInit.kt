@@ -24,6 +24,7 @@ class SerializerThunk(
 
 class Test {
     private var serializer: Serializer = SerializerThunk(::SerializerImpl) { serializer = it }
+    //private var serializer: Serializer = SerializerThunk(::SerializerImpl, this::serializer::set)
 
     fun test() {
         serializer.serialize(1)
