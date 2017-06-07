@@ -39,7 +39,7 @@ fun Derived.log() {
 }
 
 fun main(args: Array<String>) {
-    "test".log()
+    "testAtLeastOnce".log()
     listOf(Base(), Base()).log()
     listOf(Derived(), Derived()).log()
     Base().log()

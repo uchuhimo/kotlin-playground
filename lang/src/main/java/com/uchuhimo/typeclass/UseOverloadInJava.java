@@ -5,6 +5,6 @@ import static com.uchuhimo.typeclass.ImplementShowWithOverload.INSTANCE;
 
 public class UseOverloadInJava {
   public static void main(String[] args) {
-    INSTANCE.log("test");
+    INSTANCE.log("testAtLeastOnce");
   }
 }

@@ -13,7 +13,7 @@ fun main(args: Array<String>) {
         com.uchuhimo.typeclass.implement1.log(a)
     }
 
-    log("test")
+    log("testAtLeastOnce")
     log(listOf(Base(), Base()))
     log(listOf(Derived(), Derived()))
     log(Derived())

@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 public class UseOverloadInPackageInJava {
   public static void main(String[] args) {
-    log("test");
+    log("testAtLeastOnce");
     log(new ArrayList<Base>() {
       {
         add(new Base());

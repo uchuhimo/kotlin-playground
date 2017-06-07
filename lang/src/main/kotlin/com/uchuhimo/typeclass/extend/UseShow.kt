@@ -75,9 +75,9 @@ fun <T> mix(
 }
 
 fun main(args: Array<String>) {
-    "test".extend(loggableForString).log()
-    "test".loggableForString().log()
-    "test".log()
+    "testAtLeastOnce".extend(loggableForString).log()
+    "testAtLeastOnce".loggableForString().log()
+    "testAtLeastOnce".log()
 
     listOf(Base(), Base()).loggableForBaseList().log()
     listOf(Base(), Base()).log()
@@ -89,10 +89,10 @@ fun main(args: Array<String>) {
 
     LoggableClass().log()
 
-    walkerForString("test").walk()
-    "test".extend(walkerForString).walk()
+    walkerForString("testAtLeastOnce").walk()
+    "testAtLeastOnce".extend(walkerForString).walk()
 
-    val extendString = "test".extend {
+    val extendString = "testAtLeastOnce".extend {
         object : Self<String>(this),
                 Walker by walkerForString(this),
                 Loggable by loggableForString(this) {}
@@ -101,7 +101,7 @@ fun main(args: Array<String>) {
     extendString.walk()
     println(extendString.self.length)
 
-    val extendString2 = "test".extend(mix(loggableForString, walkerForString))
+    val extendString2 = "testAtLeastOnce".extend(mix(loggableForString, walkerForString))
     extendString2.log()
     extendString2.walk()
     println(extendString2.self.length)
@@ -111,7 +111,7 @@ fun main(args: Array<String>) {
                 Walker by walkerForString(self),
                 Loggable by loggableForString(self) {}
     }
-    "test".extend(multiExtend).walk()
+    "testAtLeastOnce".extend(multiExtend).walk()
 
     val multiExtend2 = { self: String ->
         object : Self<String>(self), Walker, Loggable {
@@ -122,5 +122,5 @@ fun main(args: Array<String>) {
             }
         }
     }
-    "test".extend(multiExtend2).log()
+    "testAtLeastOnce".extend(multiExtend2).log()
 }
