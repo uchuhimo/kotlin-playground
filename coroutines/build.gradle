@@ -3,3 +3,13 @@ kotlin {
         coroutines "enable"
     }
 }
+
+ext {
+    kotlinxCoroutinesVersion = "0.15"
+}
+
+dependencies {
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinxCoroutinesVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$kotlinxCoroutinesVersion"
+    compile "org.jetbrains.kotlinx:kotlinx-coroutines-nio:$kotlinxCoroutinesVersion"
+}
