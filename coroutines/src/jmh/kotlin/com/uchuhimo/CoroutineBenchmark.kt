@@ -4,6 +4,7 @@ import kotlinx.coroutines.experimental.runBlocking
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Mode
+import org.openjdk.jmh.annotations.OperationsPerInvocation
 import org.openjdk.jmh.annotations.OutputTimeUnit
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.experimental.Continuation
@@ -26,13 +27,16 @@ open class Benchmark {
     }
 
     @Benchmark
+    @OperationsPerInvocation(1000)
     fun createCoroutine() {
         startCoroutine {
         }
     }
 
     fun startCoroutine(block: suspend () -> Unit) {
-        block.startCoroutine(NoopContinuation)
+        repeat(1000) {
+            block.startCoroutine(NoopContinuation)
+        }
     }
 
     object NoopContinuation : Continuation<Unit> {
