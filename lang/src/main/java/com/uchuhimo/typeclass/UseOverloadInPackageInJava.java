@@ -1,6 +1,7 @@
 package com.uchuhimo.typeclass;
 
 //import static com.uchuhimo.typeclass.implement1.ImplementShowWithOverloadKt.log;
+
 import static com.uchuhimo.typeclass.implement2.ImplementShowWithOverload2Kt.log;
 
 import java.util.ArrayList;

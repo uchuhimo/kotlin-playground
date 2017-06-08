@@ -2,7 +2,24 @@ package com.uchuhimo.layout
 
 import com.lmax.disruptor.SingleProducerSequencer
 import org.openjdk.jol.info.ClassLayout
-import org.openjdk.jol.samples.*
+import org.openjdk.jol.samples.JOLSample_01_Basic
+import org.openjdk.jol.samples.JOLSample_02_Alignment
+import org.openjdk.jol.samples.JOLSample_03_Packing
+import org.openjdk.jol.samples.JOLSample_04_Inheritance
+import org.openjdk.jol.samples.JOLSample_05_InheritanceBarrier
+import org.openjdk.jol.samples.JOLSample_06_Gaps
+import org.openjdk.jol.samples.JOLSample_07_Exceptions
+import org.openjdk.jol.samples.JOLSample_08_Class
+import org.openjdk.jol.samples.JOLSample_09_Contended
+import org.openjdk.jol.samples.JOLSample_10_DataModels
+import org.openjdk.jol.samples.JOLSample_11_ClassWord
+import org.openjdk.jol.samples.JOLSample_12_ThinLocking
+import org.openjdk.jol.samples.JOLSample_13_BiasedLocking
+import org.openjdk.jol.samples.JOLSample_14_FatLocking
+import org.openjdk.jol.samples.JOLSample_15_IdentityHashCode
+import org.openjdk.jol.samples.JOLSample_24_Difference
+import org.openjdk.jol.samples.JOLSample_25_ArrayAlignment
+import org.openjdk.jol.samples.JOLSample_26_Hotspot
 import org.openjdk.jol.vm.VM
 import java.util.concurrent.atomic.AtomicLong
 

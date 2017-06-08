@@ -3,7 +3,6 @@ package com.uchuhimo;
 import kotlin.Unit;
 import kotlin.coroutines.experimental.EmptyCoroutineContext;
 import kotlin.coroutines.experimental.intrinsics.IntrinsicsKt;
-import kotlin.jvm.internal.Intrinsics;
 import kotlinx.coroutines.experimental.BuildersKt;
 
 public class CallCoroutine {

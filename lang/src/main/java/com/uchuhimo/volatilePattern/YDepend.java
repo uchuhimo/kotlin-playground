@@ -12,7 +12,7 @@ public class YDepend {
   private CountDownLatch latch = new CountDownLatch(2);
 
   private volatile int invoked = 0;
-  private static final AtomicIntegerFieldUpdater INVOKED =
+  private static final AtomicIntegerFieldUpdater<YDepend> INVOKED =
       AtomicIntegerFieldUpdater.newUpdater(YDepend.class, "invoked");
 
   private void invokeAtLeastOnceAfterAB() {

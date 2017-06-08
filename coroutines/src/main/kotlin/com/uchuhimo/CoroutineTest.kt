@@ -1,9 +1,25 @@
 package com.uchuhimo
 
-import kotlinx.coroutines.experimental.*
-import kotlinx.coroutines.experimental.channels.*
+import kotlinx.coroutines.experimental.CancellableContinuation
+import kotlinx.coroutines.experimental.CancellationException
+import kotlinx.coroutines.experimental.CommonPool
+import kotlinx.coroutines.experimental.CoroutineDispatcher
+import kotlinx.coroutines.experimental.Delay
+import kotlinx.coroutines.experimental.Job
+import kotlinx.coroutines.experimental.NonCancellable
+import kotlinx.coroutines.experimental.channels.Channel
+import kotlinx.coroutines.experimental.channels.ReceiveChannel
+import kotlinx.coroutines.experimental.channels.SendChannel
+import kotlinx.coroutines.experimental.channels.actor
+import kotlinx.coroutines.experimental.channels.produce
+import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.experimental.launch
+import kotlinx.coroutines.experimental.newSingleThreadContext
+import kotlinx.coroutines.experimental.run
+import kotlinx.coroutines.experimental.runBlocking
 import kotlinx.coroutines.experimental.selects.select
 import kotlinx.coroutines.experimental.sync.Mutex
+import kotlinx.coroutines.experimental.yield
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.experimental.CoroutineContext
@@ -101,6 +117,7 @@ fun main2(args: Array<String>) = runBlocking<Unit> {
 
 // Message types for counterActor
 sealed class CounterMsg
+
 object IncCounter : CounterMsg() // one-way message to increment counter
 class GetCounter(val response: SendChannel<Int>) : CounterMsg() // a request with reply
 
@@ -127,11 +144,14 @@ fun main(args: Array<String>) = runBlocking<Unit> {
 }
 
 suspend fun selectFizzBuzz(fizz: ReceiveChannel<String>, buzz: ReceiveChannel<String>) {
-    select<Unit> { // <Unit> means that this select expression does not produce any result
-        fizz.onReceive { value ->  // this is the first select clause
+    select<Unit> {
+        // <Unit> means that this select expression does not produce any result
+        fizz.onReceive { value ->
+            // this is the first select clause
             println("fizz -> '$value'")
         }
-        buzz.onReceive { value ->  // this is the second select clause
+        buzz.onReceive { value ->
+            // this is the second select clause
             println("buzz -> '$value'")
         }
     }

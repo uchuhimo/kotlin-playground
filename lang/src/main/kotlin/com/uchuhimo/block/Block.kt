@@ -11,7 +11,9 @@ fun main(args: Array<String>) {
         return b
     }()
     println(outerB)
-    run { // doc here
+
+    // doc here
+    run {
         println("just a block")
     }
     val outerC = {
