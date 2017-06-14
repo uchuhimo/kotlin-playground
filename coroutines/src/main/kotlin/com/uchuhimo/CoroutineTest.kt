@@ -1,5 +1,6 @@
 package com.uchuhimo
 
+import kotlinx.coroutines.experimental.AbstractCoroutine
 import kotlinx.coroutines.experimental.CancellableContinuation
 import kotlinx.coroutines.experimental.CancellationException
 import kotlinx.coroutines.experimental.CommonPool
@@ -7,6 +8,7 @@ import kotlinx.coroutines.experimental.CoroutineDispatcher
 import kotlinx.coroutines.experimental.Delay
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.NonCancellable
+import kotlinx.coroutines.experimental.async
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
@@ -23,6 +25,7 @@ import kotlinx.coroutines.experimental.yield
 import java.util.concurrent.ScheduledThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.EmptyCoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.system.measureTimeMillis
 
@@ -132,7 +135,7 @@ fun counterActor() = actor<CounterMsg>(CommonPool) {
     }
 }
 
-fun main(args: Array<String>) = runBlocking<Unit> {
+fun main3(args: Array<String>) = runBlocking<Unit> {
     val counter = counterActor() // create the actor
     massiveRun(CommonPool) {
         counter.send(IncCounter)
@@ -154,5 +157,23 @@ suspend fun selectFizzBuzz(fizz: ReceiveChannel<String>, buzz: ReceiveChannel<St
             // this is the second select clause
             println("buzz -> '$value'")
         }
+    }
+}
+
+fun main(args: Array<String>) = runBlocking<Unit> {
+    val time = measureTimeMillis {
+        val one = async(CommonPool) { 1 }
+        val two = async(CommonPool) { 2 }
+        println("The answer is ${one.await() + two.await()}")
+    }
+    println("Completed in $time ms")
+}
+
+class TestCoroutine<in T> : AbstractCoroutine<T>(true) {
+    override val parentContext: CoroutineContext
+        get() = EmptyCoroutineContext
+
+    override fun afterCompletion(state: Any?, mode: Int) {
+        super.afterCompletion(state, mode)
     }
 }
