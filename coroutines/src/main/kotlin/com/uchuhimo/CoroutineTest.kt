@@ -9,6 +9,7 @@ import kotlinx.coroutines.experimental.Delay
 import kotlinx.coroutines.experimental.Job
 import kotlinx.coroutines.experimental.NonCancellable
 import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.channels.ArrayBroadcastChannel
 import kotlinx.coroutines.experimental.channels.Channel
 import kotlinx.coroutines.experimental.channels.ReceiveChannel
 import kotlinx.coroutines.experimental.channels.SendChannel
@@ -57,7 +58,7 @@ fun executeBlocking(block: () -> Unit) {
     block()
 }
 
-fun main1(args: Array<String>) = runBlocking<Unit> {
+fun testCoroutine() = runBlocking<Unit> {
     println("${Thread.currentThread().name}: run")
     val job: Job = launch(CommonPoolWithDelay) {
         delay(1000L)
@@ -109,7 +110,7 @@ suspend fun massiveRun(context: CoroutineContext, action: suspend () -> Unit) {
     println("Completed ${n * k} actions in $time ms")
 }
 
-fun main2(args: Array<String>) = runBlocking<Unit> {
+fun testMutex() = runBlocking<Unit> {
     massiveRun(CommonPool) {
         mutex.withLock {
             counter++
@@ -135,7 +136,7 @@ fun counterActor() = actor<CounterMsg>(CommonPool) {
     }
 }
 
-fun main3(args: Array<String>) = runBlocking<Unit> {
+fun testActor() = runBlocking<Unit> {
     val counter = counterActor() // create the actor
     massiveRun(CommonPool) {
         counter.send(IncCounter)
@@ -160,7 +161,7 @@ suspend fun selectFizzBuzz(fizz: ReceiveChannel<String>, buzz: ReceiveChannel<St
     }
 }
 
-fun main(args: Array<String>) = runBlocking<Unit> {
+fun testAsync() = runBlocking<Unit> {
     val time = measureTimeMillis {
         val one = async(CommonPool) { 1 }
         val two = async(CommonPool) { 2 }
@@ -176,4 +177,31 @@ class TestCoroutine<in T> : AbstractCoroutine<T>(true) {
     override fun afterCompletion(state: Any?, mode: Int) {
         super.afterCompletion(state, mode)
     }
+}
+
+fun testBroadcast() = runBlocking<Unit> {
+    //val broadcastChannel = ConflatedBroadcastChannel<Int>()
+    val broadcastChannel = ArrayBroadcastChannel<Int>(1)
+    repeat(3) {
+        launch(context) {
+            broadcastChannel.open().use { channel ->
+                for (x in channel) {
+                    println(x)
+                }
+            }
+        }
+    }
+    delay(1000)
+    broadcastChannel.send(1)
+    broadcastChannel.send(2)
+    broadcastChannel.send(3)
+    broadcastChannel.close()
+}
+
+fun main(args: Array<String>) {
+//    testCoroutine()
+//    testMutex()
+//    testActor()
+//    testAsync()
+    testBroadcast()
 }
