@@ -8,39 +8,39 @@ import kotlin.concurrent.write
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 
-sealed class Item<T : Any> {
-    abstract val name: String
-    abstract val type: KClass<T>
-}
+sealed class Item<T : Any>(
+        val name: String,
+        val type: KClass<T>,
+        val description: String = "")
 
-class RequiredItem<T : Any>(
-        override val name: String,
-        override val type: KClass<T>
-) : Item<T>()
+class RequiredItem<T : Any>(name: String, type: KClass<T>, description: String = "") :
+        Item<T>(name, type, description)
 
-data class OptionalItem<T : Any>(
-        override val name: String,
-        override val type: KClass<T>,
-        val default: T
-) : Item<T>()
+class OptionalItem<T : Any>(
+        name: String,
+        type: KClass<T>,
+        val default: T,
+        description: String = ""
+) : Item<T>(name, type, description)
 
-data class LazyItem<T : Any>(
-        override val name: String,
-        override val type: KClass<T>,
-        val default: (ConfigEnv) -> T
-) : Item<T>()
+class LazyItem<T : Any>(
+        name: String,
+        type: KClass<T>,
+        val thunk: (ConfigGetter) -> T,
+        description: String = ""
+) : Item<T>(name, type, description)
 
-interface ConfigEnv {
+interface ConfigGetter {
     operator fun <T : Any> get(item: Item<T>): T
     operator fun <T : Any> get(name: String): T
     operator fun <T : Any> invoke(name: String): T = get(name)
 }
 
-interface Config : ConfigEnv {
+interface Config : ConfigGetter {
     operator fun <T : Any> set(item: Item<T>, value: T)
     operator fun <T : Any> set(name: String, value: T)
 
-    fun addScope(scope: ConfigScope)
+    fun addSpec(spec: ConfigSpec)
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
@@ -51,8 +51,8 @@ class RepeatedItemException(message: String) : Exception(message)
 
 class RepeatedNameException(message: String) : Exception(message)
 
-class ConfigImpl : Config {
-    private val valueByItem = mutableMapOf<Item<*>, ValueState<*>>()
+private class ConfigImpl : Config {
+    private val valueByItem = mutableMapOf<Item<*>, ValueState>()
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
 
     private val lock = ReentrantReadWriteLock()
@@ -63,8 +63,8 @@ class ConfigImpl : Config {
         @Suppress("UNCHECKED_CAST")
         return when (valueState) {
             is ValueState.Unset -> error("${item.name} is unset")
-            is ValueState.Value -> valueState.value as T
-            is ValueState.Lazy -> valueState.thunk(this) as T
+            is ValueState.Value<*> -> valueState.value as T
+            is ValueState.Lazy<*> -> valueState.thunk(this) as T
         }
     }
 
@@ -97,9 +97,9 @@ class ConfigImpl : Config {
         set(item as Item<T>, value)
     }
 
-    override fun addScope(scope: ConfigScope) {
+    override fun addSpec(spec: ConfigSpec) {
         lock.write {
-            scope.items.forEach { item ->
+            spec.items.forEach { item ->
                 val name = item.name
                 if (!nameByItem.containsKey(item)) {
                     if (!nameByItem.containsValue(name)) {
@@ -107,47 +107,56 @@ class ConfigImpl : Config {
                         valueByItem[item] = when (item) {
                             is OptionalItem -> ValueState.Value(item.default)
                             is RequiredItem -> ValueState.Unset
-                            is LazyItem -> ValueState.Lazy(item.default)
+                            is LazyItem -> ValueState.Lazy(item.thunk)
                         }
                     } else {
-                        throw RepeatedNameException("item ${name} has been added")
+                        throw RepeatedNameException("item $name has been added")
                     }
                 } else {
-                    throw RepeatedItemException("item ${name} has been added")
+                    throw RepeatedItemException("item $name has been added")
                 }
             }
         }
     }
 
-    private sealed class ValueState<T> {
-        object Unset : ValueState<Nothing>()
-        data class Lazy<T>(val thunk: (Config) -> T) : ValueState<T>()
-        data class Value<T>(val value: T) : ValueState<T>()
+    private sealed class ValueState {
+        object Unset : ValueState()
+        data class Lazy<T>(val thunk: (Config) -> T) : ValueState()
+        data class Value<T>(val value: T) : ValueState()
     }
 }
 
-open class ConfigScope(val prefix: String) {
+open class ConfigSpec(val prefix: String) {
     private val _items = mutableListOf<Item<*>>()
 
     val items: List<Item<*>> = _items
 
     private fun qualify(name: String) = "$prefix.$name"
 
-    inline fun <reified T : Any> item(name: String) = item(name, T::class)
+    inline fun <reified T : Any> required(name: String, description: String = "") =
+            required(T::class, name, description)
 
-    fun <T : Any> item(name: String, type: KClass<T>) =
-            RequiredItem(qualify(name), type).also { addItem(it) }
+    fun <T : Any> required(type: KClass<T>, name: String, description: String = "") =
+            RequiredItem(qualify(name), type, description).also { addItem(it) }
 
-    inline fun <reified T : Any> item(name: String, default: T) = item(name, T::class, default)
+    inline fun <reified T : Any> optional(name: String, default: T, description: String = "") =
+            optional(T::class, name, default, description)
 
-    fun <T : Any> item(name: String, type: KClass<T>, default: T) =
-            OptionalItem(qualify(name), type, default).also { addItem(it) }
+    fun <T : Any> optional(type: KClass<T>, name: String, default: T, description: String = "") =
+            OptionalItem(qualify(name), type, default, description).also { addItem(it) }
 
-    inline fun <reified T : Any> item(name: String, noinline default: (ConfigEnv) -> T) =
-            item(name, T::class, default)
+    inline fun <reified T : Any> lazy(
+            name: String,
+            description: String = "",
+            noinline default: (ConfigGetter) -> T) =
+            lazy(T::class, name, description, default)
 
-    fun <T : Any> item(name: String, type: KClass<T>, default: (ConfigEnv) -> T) =
-            LazyItem(qualify(name), type, default).also { addItem(it) }
+    fun <T : Any> lazy(
+            type: KClass<T>,
+            name: String,
+            description: String = "",
+            default: (ConfigGetter) -> T) =
+            LazyItem(qualify(name), type, default, description).also { addItem(it) }
 
     fun addItem(item: Item<*>) {
         _items += item
@@ -155,11 +164,25 @@ open class ConfigScope(val prefix: String) {
 }
 
 class Buffer {
-    companion object : ConfigScope("network.buffer") {
-        val size = item<Int>("size")
-        val totalSize = item("totalSize") { it[size] * 2 }
-        val name = item("name", "buffer")
-        val type = item("type", Type.OFF_HEAP)
+    companion object : ConfigSpec("network.buffer") {
+        val size = required<Int>(name = "size", description = "size of buffer in KB")
+        val totalSize = lazy(
+                name = "totalSize",
+                description = "total size of buffer in KB") { it[size] * 2 }
+        val name = optional(
+                name = "name",
+                default = "buffer",
+                description = "name of buffer")
+        val type = optional(
+                name = "type",
+                default = Type.OFF_HEAP,
+                description = """
+                              | position of network buffer.
+                              | two type:
+                              | - on-heap
+                              | - off-heap
+                              | buffer is off-heap by default.
+                              """.trimMargin("| "))
     }
 
     enum class Type {
@@ -168,12 +191,12 @@ class Buffer {
 }
 
 fun main(args: Array<String>) {
-    Buffer.items.forEach { println(it) }
-    val config = Config().apply { addScope(Buffer) }
+    Buffer.items.forEach { println(it.name); println(it.description) }
+    val config = Config().apply { addSpec(Buffer) }
     config.apply {
-        addScope(object : ConfigScope("network.buffer") {
+        addSpec(object : ConfigSpec("network.buffer") {
             init {
-                item("name1", 1)
+                optional("name1", 1)
             }
         })
     }
