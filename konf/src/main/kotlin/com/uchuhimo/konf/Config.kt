@@ -10,17 +10,22 @@ import kotlin.reflect.full.isSubclassOf
 interface ConfigGetter {
     operator fun <T : Any> get(item: Item<T>): T
     operator fun <T : Any> get(name: String): T
+    fun <T : Any> getOrNull(item: Item<T>): T?
+    fun <T : Any> getOrNull(name: String): T?
     operator fun <T : Any> invoke(name: String): T = get(name)
 }
 
 interface Config : ConfigGetter {
     operator fun <T : Any> set(item: Item<T>, value: T)
     operator fun <T : Any> set(name: String, value: T)
+    operator fun contains(item: Item<*>): Boolean
+    operator fun contains(name: String): Boolean
 
     fun addSpec(spec: ConfigSpec)
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
+        operator fun invoke(init: Config.() -> Unit): Config = Config().apply(init)
     }
 }
 
@@ -34,9 +39,14 @@ private class ConfigImpl : Config {
 
     private val lock = ReentrantReadWriteLock()
 
-    override fun <T : Any> get(item: Item<T>): T {
-        val valueState = lock.read { valueByItem[item] } ?:
-                throw NoSuchElementException("cannot find ${item.name} in config")
+    override fun <T : Any> get(item: Item<T>): T = getOrNull(item) ?:
+            throw NoSuchElementException("cannot find ${item.name} in config")
+
+    override fun <T : Any> get(name: String): T = getOrNull<T>(name) ?:
+            throw NoSuchElementException("cannot find $name in config")
+
+    override fun <T : Any> getOrNull(item: Item<T>): T? {
+        val valueState = lock.read { valueByItem[item] } ?: return null
         @Suppress("UNCHECKED_CAST")
         return when (valueState) {
             is ValueState.Unset -> error("${item.name} is unset")
@@ -45,12 +55,15 @@ private class ConfigImpl : Config {
         }
     }
 
-    override fun <T : Any> get(name: String): T {
-        val item = lock.read { nameByItem.inverse[name] } ?:
-                throw NoSuchElementException("cannot find $name in config")
+    override fun <T : Any> getOrNull(name: String): T? {
+        val item = lock.read { nameByItem.inverse[name] } ?: return null
         @Suppress("UNCHECKED_CAST")
         return get(item as Item<T>)
     }
+
+    override fun contains(item: Item<*>): Boolean = lock.read { valueByItem[item] } != null
+
+    override fun contains(name: String): Boolean = lock.read { nameByItem.inverse[name] } != null
 
     override fun <T : Any> set(item: Item<T>, value: T) {
         if (value::class.isSubclassOf(item.type)) {

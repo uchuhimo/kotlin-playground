@@ -1,9 +1,10 @@
 package com.uchuhimo.collections
 
-import com.natpryce.hamkrest.and
+import com.natpryce.hamkrest.absent
 import com.natpryce.hamkrest.assertion.assert
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.hasElement
+import com.natpryce.hamkrest.isIn
+import com.natpryce.hamkrest.sameInstance
 import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.given
@@ -33,10 +34,14 @@ object MutableBiMapSpec : Spek({
             assert.that(biMap.size, equalTo(3))
         }
         it("should contain given keys") {
-            assert.that(biMap.keys, hasElement(1) and hasElement(2) and hasElement(3))
+            assert.that(1, isIn(biMap.keys))
+            assert.that(2, isIn(biMap.keys))
+            assert.that(3, isIn(biMap.keys))
         }
         it("should contain given values") {
-            assert.that(biMap.values, hasElement("1") and hasElement("2") and hasElement("3"))
+            assert.that("1", isIn(biMap.values))
+            assert.that("2", isIn(biMap.values))
+            assert.that("3", isIn(biMap.values))
         }
         it("should map from given key to given value") {
             assert.that(biMap[1], equalTo("1"))
@@ -49,7 +54,7 @@ object MutableBiMapSpec : Spek({
         }
         on("inverse twice") {
             it("should return itself") {
-                assert.that(biMap.inverse.inverse === biMap, equalTo(true))
+                assert.that(biMap.inverse.inverse, sameInstance(biMap))
             }
         }
         group("put operation") {
@@ -63,7 +68,7 @@ object MutableBiMapSpec : Spek({
                 it("should not remove any existing entry") {
                     assert.that(biMap.keys.size, equalTo(4))
                     assert.that(biMap.values.size, equalTo(4))
-                    assert.that<String?>(previousValue, equalTo(null))
+                    assert.that(previousValue, absent())
                 }
             }
             on("put entry, when key exists, and value is unbound") {
