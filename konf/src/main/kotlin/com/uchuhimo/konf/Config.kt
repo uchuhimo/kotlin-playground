@@ -5,30 +5,7 @@ import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
-import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
-
-sealed class Item<T : Any>(
-        val name: String,
-        val type: KClass<T>,
-        val description: String = "")
-
-class RequiredItem<T : Any>(name: String, type: KClass<T>, description: String = "") :
-        Item<T>(name, type, description)
-
-class OptionalItem<T : Any>(
-        name: String,
-        type: KClass<T>,
-        val default: T,
-        description: String = ""
-) : Item<T>(name, type, description)
-
-class LazyItem<T : Any>(
-        name: String,
-        type: KClass<T>,
-        val thunk: (ConfigGetter) -> T,
-        description: String = ""
-) : Item<T>(name, type, description)
 
 interface ConfigGetter {
     operator fun <T : Any> get(item: Item<T>): T
@@ -121,96 +98,7 @@ private class ConfigImpl : Config {
 
     private sealed class ValueState {
         object Unset : ValueState()
-        data class Lazy<T>(val thunk: (Config) -> T) : ValueState()
-        data class Value<T>(val value: T) : ValueState()
+        data class Lazy<out T>(val thunk: (Config) -> T) : ValueState()
+        data class Value<out T>(val value: T) : ValueState()
     }
-}
-
-open class ConfigSpec(val prefix: String) {
-    private val _items = mutableListOf<Item<*>>()
-
-    val items: List<Item<*>> = _items
-
-    private fun qualify(name: String) = "$prefix.$name"
-
-    inline fun <reified T : Any> required(name: String, description: String = "") =
-            required(T::class, name, description)
-
-    fun <T : Any> required(type: KClass<T>, name: String, description: String = "") =
-            RequiredItem(qualify(name), type, description).also { addItem(it) }
-
-    inline fun <reified T : Any> optional(name: String, default: T, description: String = "") =
-            optional(T::class, name, default, description)
-
-    fun <T : Any> optional(type: KClass<T>, name: String, default: T, description: String = "") =
-            OptionalItem(qualify(name), type, default, description).also { addItem(it) }
-
-    inline fun <reified T : Any> lazy(
-            name: String,
-            description: String = "",
-            noinline default: (ConfigGetter) -> T) =
-            lazy(T::class, name, description, default)
-
-    fun <T : Any> lazy(
-            type: KClass<T>,
-            name: String,
-            description: String = "",
-            default: (ConfigGetter) -> T) =
-            LazyItem(qualify(name), type, default, description).also { addItem(it) }
-
-    fun addItem(item: Item<*>) {
-        _items += item
-    }
-}
-
-class Buffer {
-    companion object : ConfigSpec("network.buffer") {
-        val size = required<Int>(name = "size", description = "size of buffer in KB")
-        val totalSize = lazy(
-                name = "totalSize",
-                description = "total size of buffer in KB") { it[size] * 2 }
-        val name = optional(
-                name = "name",
-                default = "buffer",
-                description = "name of buffer")
-        val type = optional(
-                name = "type",
-                default = Type.OFF_HEAP,
-                description = """
-                              | position of network buffer.
-                              | two type:
-                              | - on-heap
-                              | - off-heap
-                              | buffer is off-heap by default.
-                              """.trimMargin("| "))
-    }
-
-    enum class Type {
-        ON_HEAP, OFF_HEAP
-    }
-}
-
-fun main(args: Array<String>) {
-    Buffer.items.forEach { println(it.name); println(it.description) }
-    val config = Config().apply { addSpec(Buffer) }
-    config.apply {
-        addSpec(object : ConfigSpec("network.buffer") {
-            init {
-                optional("name1", 1)
-            }
-        })
-    }
-    config[Buffer.size] = 1024
-    config["network.buffer.type"] = Buffer.Type.ON_HEAP
-    println(config[Buffer.totalSize])
-    println(config[Buffer.name])
-    println(config[Buffer.type])
-    println(config.get<Buffer.Type>("network.buffer.type"))
-    println(config<Buffer.Type>("network.buffer.type"))
-    config[Buffer.size] = 2048
-    println(config[Buffer.totalSize])
-    config[Buffer.totalSize] = 0
-    println(config[Buffer.totalSize])
-    config[Buffer.size] = 1024
-    println(config[Buffer.totalSize])
 }
