@@ -1,4 +1,4 @@
-package com.uchuhimo.config
+package com.uchuhimo.konf
 
 import com.uchuhimo.collections.mutableBiMapOf
 import java.util.*
