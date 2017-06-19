@@ -27,7 +27,7 @@ object MutableBiMapSpec : Spek({
     }
 
     given("a mutable bimap") {
-        val biMap = mutableBiMapOf(1 to "1", 2 to "2", 3 to "3")
+        val biMap by memoized { mutableBiMapOf(1 to "1", 2 to "2", 3 to "3") }
 
         it("should contain given number of elements") {
             assert.that(biMap.size, equalTo(3))
@@ -67,44 +67,44 @@ object MutableBiMapSpec : Spek({
                 }
             }
             on("put entry, when key exists, and value is unbound") {
-                biMap[4] = "5"
+                biMap[3] = "4"
                 it("should contain specified entry") {
-                    assert.that(biMap.containsKey(4), equalTo(true))
-                    assert.that(biMap.containsValue("5"), equalTo(true))
-                    assert.that(biMap[4], equalTo("5"))
+                    assert.that(biMap.containsKey(3), equalTo(true))
+                    assert.that(biMap.containsValue("4"), equalTo(true))
+                    assert.that(biMap[3], equalTo("4"))
                 }
                 it("should remove previous value") {
-                    assert.that(biMap.containsValue("4"), equalTo(false))
+                    assert.that(biMap.containsValue("3"), equalTo(false))
                 }
             }
             on("put entry, when key is unbound, and value exists") {
                 it("should throw IllegalArgumentException") {
-                    assert.that({ biMap.put(5, "5") }, throws<IllegalArgumentException>())
+                    assert.that({ biMap.put(4, "3") }, throws<IllegalArgumentException>())
                 }
             }
             on("force put entry, when key is unbound, and value exists") {
-                biMap.forcePut(5, "5")
+                biMap.forcePut(4, "3")
                 it("should contain specified entry") {
-                    assert.that(biMap.containsKey(5), equalTo(true))
-                    assert.that(biMap.containsValue("5"), equalTo(true))
-                    assert.that(biMap[5], equalTo("5"))
+                    assert.that(biMap.containsKey(4), equalTo(true))
+                    assert.that(biMap.containsValue("3"), equalTo(true))
+                    assert.that(biMap[4], equalTo("3"))
                 }
                 it("should remove previous key") {
-                    assert.that(biMap.containsKey(4), equalTo(false))
+                    assert.that(biMap.containsKey(3), equalTo(false))
                 }
             }
             on("force put entry, when both key and value exist") {
-                val previousValue = biMap.forcePut(5, "5")
+                val previousValue = biMap.forcePut(3, "3")
                 it("should be unchanged") {
-                    assert.that(biMap[5], equalTo(previousValue))
+                    assert.that(biMap[3], equalTo(previousValue))
                 }
             }
             on("put multiple entries") {
-                biMap.putAll(mapOf(6 to "6", 7 to "7", 8 to "8"))
+                biMap.putAll(mapOf(4 to "4", 5 to "5", 6 to "6"))
                 it("should contain these entries") {
+                    assert.that(biMap[4], equalTo("4"))
+                    assert.that(biMap[5], equalTo("5"))
                     assert.that(biMap[6], equalTo("6"))
-                    assert.that(biMap[7], equalTo("7"))
-                    assert.that(biMap[8], equalTo("8"))
                 }
             }
         }
@@ -117,11 +117,11 @@ object MutableBiMapSpec : Spek({
             }
             on("remove unbound key") {
                 it("doesn't contain the specified key before removing") {
-                    assert.that(biMap.containsKey(9), equalTo(false))
+                    assert.that(biMap.containsKey(4), equalTo(false))
                 }
-                biMap.remove(9)
+                biMap.remove(4)
                 it("should not contain the specified key after removing") {
-                    assert.that(biMap.containsKey(9), equalTo(false))
+                    assert.that(biMap.containsKey(4), equalTo(false))
                 }
             }
             on("remove existing entry") {
@@ -132,7 +132,7 @@ object MutableBiMapSpec : Spek({
                 }
             }
             on("remove entry, when key exists, and value is unbound") {
-                biMap.remove(3, "2")
+                biMap.remove(3, "4")
                 it("should not remove any entry") {
                     assert.that(biMap.containsKey(3), equalTo(true))
                 }
