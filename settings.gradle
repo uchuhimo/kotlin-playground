@@ -9,4 +9,4 @@ pluginManagement {
 
 rootProject.name = "kotlin-playground"
 
-include "lang", "coroutines", "konf"
+include "coroutines", "konf", "kotlinx-bimap", "lang"
