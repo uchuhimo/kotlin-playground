@@ -132,5 +132,45 @@ object ConfigTestSpec : Spek({
                 }
             }
         }
+        group("multi-layer config") {
+            val multiLayerConfig by memoized { config.withLayer("multi-layer") }
+            it("should have specified name") {
+                assertThat(multiLayerConfig.name, equalTo("multi-layer"))
+            }
+            it("should contain same items with parent config") {
+                assertThat(multiLayerConfig[NetworkBuffer.name],
+                        equalTo(config[NetworkBuffer.name]))
+                assertThat(multiLayerConfig[NetworkBuffer.type],
+                        equalTo(config[NetworkBuffer.type]))
+            }
+            on("set with item") {
+                multiLayerConfig[NetworkBuffer.name] = "newName"
+                it("should contain the specified value in the top level," +
+                        " and keep the rest levels unchanged") {
+                    assertThat(multiLayerConfig[NetworkBuffer.name], equalTo("newName"))
+                    assertThat(config[NetworkBuffer.name], equalTo("buffer"))
+                }
+            }
+            on("set with name") {
+                multiLayerConfig["${NetworkBuffer.prefix}.name"] = "newName"
+                it("should contain the specified value in the top level," +
+                        " and keep the rest levels unchanged") {
+                    assertThat(multiLayerConfig[NetworkBuffer.name], equalTo("newName"))
+                    assertThat(config[NetworkBuffer.name], equalTo("buffer"))
+                }
+            }
+            on("add spec") {
+                val spec = object : ConfigSpec(NetworkBuffer.prefix) {
+                    val minSize = optional("minSize", 1)
+                }
+                multiLayerConfig.addSpec(spec)
+                it("should contain items in new spec, and keep the rest level unchanged") {
+                    assertThat(spec.minSize in multiLayerConfig, equalTo(true))
+                    assertThat(spec.minSize.name in multiLayerConfig, equalTo(true))
+                    assertThat(spec.minSize !in config, equalTo(true))
+                    assertThat(spec.minSize.name !in config, equalTo(true))
+                }
+            }
+        }
     }
 })

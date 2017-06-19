@@ -21,7 +21,9 @@ interface Config : ConfigGetter {
     operator fun contains(item: Item<*>): Boolean
     operator fun contains(name: String): Boolean
 
+    val name: String
     fun addSpec(spec: ConfigSpec)
+    fun withLayer(name: String = ""): Config
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
@@ -33,7 +35,12 @@ class RepeatedItemException(message: String) : Exception(message)
 
 class RepeatedNameException(message: String) : Exception(message)
 
-private class ConfigImpl : Config {
+private class ConfigImpl private constructor(
+        override val name: String,
+        private val parentLayer: ConfigImpl?
+) : Config {
+    constructor() : this("", null)
+
     private val valueByItem = mutableMapOf<Item<*>, ValueState>()
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
 
@@ -46,32 +53,72 @@ private class ConfigImpl : Config {
             throw NoSuchElementException("cannot find $name in config")
 
     override fun <T : Any> getOrNull(item: Item<T>): T? {
-        val valueState = lock.read { valueByItem[item] } ?: return null
-        @Suppress("UNCHECKED_CAST")
-        return when (valueState) {
-            is ValueState.Unset -> error("${item.name} is unset")
-            is ValueState.Value<*> -> valueState.value as T
-            is ValueState.Lazy<*> -> valueState.thunk(this) as T
+        val valueState = lock.read { valueByItem[item] }
+        if (valueState != null) {
+            @Suppress("UNCHECKED_CAST")
+            return when (valueState) {
+                is ValueState.Unset -> error("${item.name} is unset")
+                is ValueState.Value<*> -> valueState.value as T
+                is ValueState.Lazy<*> -> valueState.thunk(this) as T
+            }
+        } else {
+            if (parentLayer != null) {
+                return parentLayer.getOrNull(item)
+            } else {
+                return null
+            }
+        }
+    }
+
+    private fun getItemOrNull(name: String): Item<*>? {
+        val item = lock.read { nameByItem.inverse[name] }
+        if (item != null) {
+            return item
+        } else {
+            if (parentLayer != null) {
+                return parentLayer.getItemOrNull(name)
+            } else {
+                return null
+            }
         }
     }
 
     override fun <T : Any> getOrNull(name: String): T? {
-        val item = lock.read { nameByItem.inverse[name] } ?: return null
+        val item = getItemOrNull(name) ?: return null
         @Suppress("UNCHECKED_CAST")
         return get(item as Item<T>)
     }
 
-    override fun contains(item: Item<*>): Boolean = lock.read { valueByItem[item] } != null
+    override fun contains(item: Item<*>): Boolean {
+        if (lock.read { valueByItem.containsKey(item) }) {
+            return true
+        } else {
+            if (parentLayer != null) {
+                return parentLayer.contains(item)
+            } else {
+                return false
+            }
+        }
+    }
 
-    override fun contains(name: String): Boolean = lock.read { nameByItem.inverse[name] } != null
+    override fun contains(name: String): Boolean {
+        if (lock.read { nameByItem.containsValue(name) }) {
+            return true
+        } else {
+            if (parentLayer != null) {
+                return parentLayer.contains(name)
+            } else {
+                return false
+            }
+        }
+    }
 
     override fun <T : Any> set(item: Item<T>, value: T) {
         if (value::class.isSubclassOf(item.type)) {
-            lock.write {
-                if (!valueByItem.contains(item)) {
-                    throw NoSuchElementException("cannot find ${item.name} in config")
-                }
-                valueByItem[item] = ValueState.Value(value)
+            if (item in this) {
+                lock.write { valueByItem[item] = ValueState.Value(value) }
+            } else {
+                throw NoSuchElementException("cannot find ${item.name} in config")
             }
         } else {
             throw ClassCastException(
@@ -81,18 +128,21 @@ private class ConfigImpl : Config {
     }
 
     override fun <T : Any> set(name: String, value: T) {
-        val item = lock.read { nameByItem.inverse[name] } ?:
-                throw NoSuchElementException("cannot find $name in config")
-        @Suppress("UNCHECKED_CAST")
-        set(item as Item<T>, value)
+        val item = getItemOrNull(name)
+        if (item != null) {
+            @Suppress("UNCHECKED_CAST")
+            set(item as Item<T>, value)
+        } else {
+            throw NoSuchElementException("cannot find $name in config")
+        }
     }
 
     override fun addSpec(spec: ConfigSpec) {
         lock.write {
             spec.items.forEach { item ->
                 val name = item.name
-                if (!nameByItem.containsKey(item)) {
-                    if (!nameByItem.containsValue(name)) {
+                if (item !in this) {
+                    if (name !in this) {
                         nameByItem[item] = name
                         valueByItem[item] = when (item) {
                             is OptionalItem -> ValueState.Value(item.default)
@@ -108,6 +158,8 @@ private class ConfigImpl : Config {
             }
         }
     }
+
+    override fun withLayer(name: String) = ConfigImpl(name, this)
 
     private sealed class ValueState {
         object Unset : ValueState()
