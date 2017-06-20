@@ -5,6 +5,8 @@ import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 import kotlin.reflect.full.isSubclassOf
 
 interface ConfigGetter {
@@ -21,9 +23,12 @@ interface Config : ConfigGetter {
     operator fun contains(item: Item<*>): Boolean
     operator fun contains(name: String): Boolean
 
+    fun <T : Any> property(item: Item<T>): ReadWriteProperty<Any?, T>
+    fun <T : Any> property(name: String): ReadWriteProperty<Any?, T>
+
     val name: String
-    fun addSpec(spec: ConfigSpec)
     val parent: Config?
+    fun addSpec(spec: ConfigSpec)
     fun withLayer(name: String = ""): Config
 
     companion object {
@@ -119,7 +124,15 @@ private class ConfigImpl private constructor(
     override fun <T : Any> set(item: Item<T>, value: T) {
         if (value::class.isSubclassOf(item.type)) {
             if (item in this) {
-                lock.write { valueByItem[item] = ValueState.Value(value) }
+                lock.write {
+                    val valueState = valueByItem[item]!!
+                    if (valueState is ValueState.Value<*>) {
+                        @Suppress("UNCHECKED_CAST")
+                        (valueState as ValueState.Value<T>).value = value
+                    } else {
+                        valueByItem[item] = ValueState.Value(value)
+                    }
+                }
             } else {
                 throw NoSuchElementException("cannot find ${item.name} in config")
             }
@@ -137,6 +150,30 @@ private class ConfigImpl private constructor(
             set(item as Item<T>, value)
         } else {
             throw NoSuchElementException("cannot find $name in config")
+        }
+    }
+
+    override fun <T : Any> property(item: Item<T>): ReadWriteProperty<Any?, T> {
+        if (!contains(item)) {
+            throw NoSuchElementException("cannot find ${item.name} in config")
+        }
+        return object : ReadWriteProperty<Any?, T> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T = get(item)
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) =
+                    set(item, value)
+        }
+    }
+
+    override fun <T : Any> property(name: String): ReadWriteProperty<Any?, T> {
+        if (!contains(name)) {
+            throw NoSuchElementException("cannot find $name in config")
+        }
+        return object : ReadWriteProperty<Any?, T> {
+            override fun getValue(thisRef: Any?, property: KProperty<*>): T = get(name)
+
+            override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) =
+                    set(name, value)
         }
     }
 
@@ -166,7 +203,7 @@ private class ConfigImpl private constructor(
 
     private sealed class ValueState {
         object Unset : ValueState()
-        data class Lazy<out T>(val thunk: (ConfigGetter) -> T) : ValueState()
-        data class Value<out T>(val value: T) : ValueState()
+        data class Lazy<T>(var thunk: (ConfigGetter) -> T) : ValueState()
+        data class Value<T>(var value: T) : ValueState()
     }
 }

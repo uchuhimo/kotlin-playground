@@ -7,7 +7,6 @@ import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
-import org.jetbrains.spek.api.dsl.xon
 import org.jetbrains.spek.subject.SubjectSpek
 
 object ConfigSpek : SubjectSpek<Config>({
@@ -119,6 +118,28 @@ object ConfigSpek : SubjectSpek<Config>({
                 it("should throw ClassCastException") {
                     assertThat({ subject[NetworkBuffer.size.name] = "1024" },
                             throws<ClassCastException>())
+                }
+            }
+        }
+        group("item property") {
+            on("declare a property by item") {
+                var name by subject.property(NetworkBuffer.name)
+                it("should behave same as `get`") {
+                    assertThat(name, equalTo(subject[NetworkBuffer.name]))
+                }
+                it("should support set operation as `set`") {
+                    name = "newName"
+                    assertThat(name, equalTo("newName"))
+                }
+            }
+            on("declare a property by name") {
+                var name by subject.property<String>(NetworkBuffer.name.name)
+                it("should behave same as `get`") {
+                    assertThat(name, equalTo(subject[NetworkBuffer.name]))
+                }
+                it("should support set operation as `set`") {
+                    name = "newName"
+                    assertThat(name, equalTo("newName"))
                 }
             }
         }
