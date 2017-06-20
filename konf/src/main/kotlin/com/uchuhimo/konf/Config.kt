@@ -23,6 +23,7 @@ interface Config : ConfigGetter {
 
     val name: String
     fun addSpec(spec: ConfigSpec)
+    val parent: Config?
     fun withLayer(name: String = ""): Config
 
     companion object {
@@ -37,7 +38,7 @@ class RepeatedNameException(message: String) : Exception(message)
 
 private class ConfigImpl private constructor(
         override val name: String,
-        private val parentLayer: ConfigImpl?
+        override val parent: ConfigImpl?
 ) : Config {
     constructor() : this("", null)
 
@@ -52,18 +53,20 @@ private class ConfigImpl private constructor(
     override fun <T : Any> get(name: String): T = getOrNull<T>(name) ?:
             throw NoSuchElementException("cannot find $name in config")
 
-    override fun <T : Any> getOrNull(item: Item<T>): T? {
+    override fun <T : Any> getOrNull(item: Item<T>): T? = getOrNull(item, this)
+
+    private fun <T : Any> getOrNull(item: Item<T>, lazyContext: ConfigGetter): T? {
         val valueState = lock.read { valueByItem[item] }
         if (valueState != null) {
             @Suppress("UNCHECKED_CAST")
             return when (valueState) {
                 is ValueState.Unset -> error("${item.name} is unset")
                 is ValueState.Value<*> -> valueState.value as T
-                is ValueState.Lazy<*> -> valueState.thunk(this) as T
+                is ValueState.Lazy<*> -> valueState.thunk(lazyContext) as T
             }
         } else {
-            if (parentLayer != null) {
-                return parentLayer.getOrNull(item)
+            if (parent != null) {
+                return parent.getOrNull(item, lazyContext)
             } else {
                 return null
             }
@@ -75,8 +78,8 @@ private class ConfigImpl private constructor(
         if (item != null) {
             return item
         } else {
-            if (parentLayer != null) {
-                return parentLayer.getItemOrNull(name)
+            if (parent != null) {
+                return parent.getItemOrNull(name)
             } else {
                 return null
             }
@@ -93,8 +96,8 @@ private class ConfigImpl private constructor(
         if (lock.read { valueByItem.containsKey(item) }) {
             return true
         } else {
-            if (parentLayer != null) {
-                return parentLayer.contains(item)
+            if (parent != null) {
+                return parent.contains(item)
             } else {
                 return false
             }
@@ -105,8 +108,8 @@ private class ConfigImpl private constructor(
         if (lock.read { nameByItem.containsValue(name) }) {
             return true
         } else {
-            if (parentLayer != null) {
-                return parentLayer.contains(name)
+            if (parent != null) {
+                return parent.contains(name)
             } else {
                 return false
             }
@@ -163,7 +166,7 @@ private class ConfigImpl private constructor(
 
     private sealed class ValueState {
         object Unset : ValueState()
-        data class Lazy<out T>(val thunk: (Config) -> T) : ValueState()
+        data class Lazy<out T>(val thunk: (ConfigGetter) -> T) : ValueState()
         data class Value<out T>(val value: T) : ValueState()
     }
 }
