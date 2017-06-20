@@ -21,5 +21,6 @@ class LazyItem<T : Any>(
         name: String,
         type: KClass<T>,
         val thunk: (ConfigGetter) -> T,
+        val placeholder: String = "",
         description: String = ""
 ) : Item<T>(name, type, description)

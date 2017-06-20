@@ -18,10 +18,14 @@ interface ConfigGetter {
 }
 
 interface Config : ConfigGetter {
-    operator fun <T : Any> set(item: Item<T>, value: T)
-    operator fun <T : Any> set(name: String, value: T)
     operator fun contains(item: Item<*>): Boolean
     operator fun contains(name: String): Boolean
+    operator fun <T : Any> set(item: Item<T>, value: T)
+    operator fun <T : Any> set(name: String, value: T)
+    fun <T : Any> lazySet(item: Item<T>, lazyThunk: (ConfigGetter) -> T)
+    fun <T : Any> lazySet(name: String, lazyThunk: (ConfigGetter) -> T)
+    fun unset(item: Item<*>)
+    fun unset(name: String)
 
     fun <T : Any> property(item: Item<T>): ReadWriteProperty<Any?, T>
     fun <T : Any> property(name: String): ReadWriteProperty<Any?, T>
@@ -41,6 +45,8 @@ class RepeatedItemException(message: String) : Exception(message)
 
 class RepeatedNameException(message: String) : Exception(message)
 
+class InvalidLazySetException(message: String) : Exception(message)
+
 private class ConfigImpl private constructor(
         override val name: String,
         override val parent: ConfigImpl?
@@ -52,26 +58,45 @@ private class ConfigImpl private constructor(
 
     private val lock = ReentrantReadWriteLock()
 
-    override fun <T : Any> get(item: Item<T>): T = getOrNull(item) ?:
+    override fun <T : Any> get(item: Item<T>): T = getOrNull(item, errorWhenUnset = true) ?:
             throw NoSuchElementException("cannot find ${item.name} in config")
 
-    override fun <T : Any> get(name: String): T = getOrNull<T>(name) ?:
+    override fun <T : Any> get(name: String): T = getOrNull<T>(name, errorWhenUnset = true) ?:
             throw NoSuchElementException("cannot find $name in config")
 
-    override fun <T : Any> getOrNull(item: Item<T>): T? = getOrNull(item, this)
+    override fun <T : Any> getOrNull(item: Item<T>): T? =
+            getOrNull(item, errorWhenUnset = false)
 
-    private fun <T : Any> getOrNull(item: Item<T>, lazyContext: ConfigGetter): T? {
+    private fun <T : Any> getOrNull(
+            item: Item<T>,
+            errorWhenUnset: Boolean,
+            lazyContext: ConfigGetter = this
+    ): T? {
         val valueState = lock.read { valueByItem[item] }
         if (valueState != null) {
             @Suppress("UNCHECKED_CAST")
             return when (valueState) {
-                is ValueState.Unset -> error("${item.name} is unset")
+                is ValueState.Unset ->
+                    if (errorWhenUnset) {
+                        error("${item.name} is unset")
+                    } else {
+                        return null
+                    }
                 is ValueState.Value<*> -> valueState.value as T
-                is ValueState.Lazy<*> -> valueState.thunk(lazyContext) as T
+                is ValueState.Lazy<*> -> {
+                    val value = valueState.thunk(lazyContext)!!
+                    if (value::class.isSubclassOf(item.type)) {
+                        value as T
+                    } else {
+                        throw InvalidLazySetException(
+                                "fail to cast $value with ${value::class} to ${item.type}" +
+                                        " when getting ${item.name} in config")
+                    }
+                }
             }
         } else {
             if (parent != null) {
-                return parent.getOrNull(item, lazyContext)
+                return parent.getOrNull(item, errorWhenUnset, lazyContext)
             } else {
                 return null
             }
@@ -91,10 +116,12 @@ private class ConfigImpl private constructor(
         }
     }
 
-    override fun <T : Any> getOrNull(name: String): T? {
+    override fun <T : Any> getOrNull(name: String): T? = getOrNull(name, errorWhenUnset = false)
+
+    private fun <T : Any> getOrNull(name: String, errorWhenUnset: Boolean): T? {
         val item = getItemOrNull(name) ?: return null
         @Suppress("UNCHECKED_CAST")
-        return get(item as Item<T>)
+        return getOrNull(item as Item<T>, errorWhenUnset)
     }
 
     override fun contains(item: Item<*>): Boolean {
@@ -125,7 +152,7 @@ private class ConfigImpl private constructor(
         if (value::class.isSubclassOf(item.type)) {
             if (item in this) {
                 lock.write {
-                    val valueState = valueByItem[item]!!
+                    val valueState = valueByItem[item]
                     if (valueState is ValueState.Value<*>) {
                         @Suppress("UNCHECKED_CAST")
                         (valueState as ValueState.Value<T>).value = value
@@ -148,6 +175,49 @@ private class ConfigImpl private constructor(
         if (item != null) {
             @Suppress("UNCHECKED_CAST")
             set(item as Item<T>, value)
+        } else {
+            throw NoSuchElementException("cannot find $name in config")
+        }
+    }
+
+    override fun <T : Any> lazySet(item: Item<T>, lazyThunk: (ConfigGetter) -> T) {
+        if (item in this) {
+            lock.write {
+                val valueState = valueByItem[item]
+                if (valueState is ValueState.Lazy<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    (valueState as ValueState.Lazy<T>).thunk = lazyThunk
+                } else {
+                    valueByItem[item] = ValueState.Lazy(lazyThunk)
+                }
+            }
+        } else {
+            throw NoSuchElementException("cannot find ${item.name} in config")
+        }
+    }
+
+    override fun <T : Any> lazySet(name: String, lazyThunk: (ConfigGetter) -> T) {
+        val item = getItemOrNull(name)
+        if (item != null) {
+            @Suppress("UNCHECKED_CAST")
+            lazySet(item as Item<T>, lazyThunk)
+        } else {
+            throw NoSuchElementException("cannot find $name in config")
+        }
+    }
+
+    override fun unset(item: Item<*>) {
+        if (item in this) {
+            lock.write { valueByItem[item] = ValueState.Unset }
+        } else {
+            throw NoSuchElementException("cannot find ${item.name} in config")
+        }
+    }
+
+    override fun unset(name: String) {
+        val item = getItemOrNull(name)
+        if (item != null) {
+            unset(item)
         } else {
             throw NoSuchElementException("cannot find $name in config")
         }

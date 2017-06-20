@@ -90,11 +90,14 @@ object ConfigSpek : SubjectSpek<Config>({
                 test("before set, the item should be lazy; after set," +
                         " the item should be no longer lazy, and it contains the specified value") {
                     subject[NetworkBuffer.size] = 1024
-                    assertThat(subject[NetworkBuffer.maxSize], equalTo(2048))
+                    assertThat(subject[NetworkBuffer.maxSize],
+                            equalTo(subject[NetworkBuffer.size] * 2))
                     subject[NetworkBuffer.maxSize] = 0
                     assertThat(subject[NetworkBuffer.maxSize], equalTo(0))
                     subject[NetworkBuffer.size] = 2048
-                    assertThat(subject[NetworkBuffer.maxSize], !equalTo(4096))
+                    assertThat(subject[NetworkBuffer.maxSize],
+                            !equalTo(subject[NetworkBuffer.size] * 2))
+                    assertThat(subject[NetworkBuffer.maxSize], equalTo(0))
                 }
             }
             on("set with invalid item") {
@@ -118,6 +121,41 @@ object ConfigSpek : SubjectSpek<Config>({
                 it("should throw ClassCastException") {
                     assertThat({ subject[NetworkBuffer.size.name] = "1024" },
                             throws<ClassCastException>())
+                }
+            }
+            on("lazy set with valid item") {
+                subject.lazySet(NetworkBuffer.maxSize) { it[NetworkBuffer.size] * 4 }
+                subject[NetworkBuffer.size] = 1024
+                it("should contain the specified value") {
+                    assertThat(subject[NetworkBuffer.maxSize],
+                            equalTo(subject[NetworkBuffer.size] * 4))
+                }
+            }
+            on("lazy set with valid name") {
+                subject.lazySet(NetworkBuffer.maxSize.name) { it[NetworkBuffer.size] * 4 }
+                subject[NetworkBuffer.size] = 1024
+                it("should contain the specified value") {
+                    assertThat(subject[NetworkBuffer.maxSize],
+                            equalTo(subject[NetworkBuffer.size] * 4))
+                }
+            }
+            on("lazy set with valid name and invalid value with incompatible type") {
+                subject.lazySet(NetworkBuffer.maxSize.name) { "string" }
+                it("should throw InvalidLazySetException when getting") {
+                    assertThat({ subject[NetworkBuffer.maxSize.name] },
+                            throws<InvalidLazySetException>())
+                }
+            }
+            on("unset with valid item") {
+                subject.unset(NetworkBuffer.type)
+                it("should contain `null` when using `getOrNull`") {
+                    assertThat(subject.getOrNull(NetworkBuffer.type), absent())
+                }
+            }
+            on("unset with valid name") {
+                subject.unset(NetworkBuffer.type.name)
+                it("should contain `null` when using `getOrNull`") {
+                    assertThat(subject.getOrNull(NetworkBuffer.type), absent())
                 }
             }
         }

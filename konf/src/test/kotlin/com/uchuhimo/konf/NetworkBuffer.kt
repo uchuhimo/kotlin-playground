@@ -5,7 +5,9 @@ class NetworkBuffer {
         val size = required<Int>(name = "size", description = "size of buffer in KB")
         val maxSize = lazy(
                 name = "maxSize",
-                description = "max size of buffer in KB") { it[size] * 2 }
+                description = "max size of buffer in KB",
+                placeholder = "${size.name} * 2"
+        ) { it[size] * 2 }
         val name = optional(
                 name = "name",
                 default = "buffer",
