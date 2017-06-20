@@ -3,6 +3,7 @@ package com.uchuhimo.konf
 import com.natpryce.hamkrest.absent
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.isIn
 import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
@@ -36,6 +37,21 @@ object ConfigSpek : SubjectSpek<Config>({
                 it("should throw RepeatedNameException") {
                     assertThat({ subject.addSpec(spec) }, throws<RepeatedNameException>())
                 }
+            }
+        }
+        on("iterate items in config") {
+            it("should cover all items in config") {
+                for (item in subject) {
+                    assertThat(item, isIn(NetworkBuffer.items))
+                }
+                val items = mutableListOf<Item<*>>()
+                for (item in subject) {
+                    items += item
+                }
+                for (item in NetworkBuffer.items) {
+                    assertThat(item, isIn(items))
+                }
+                assertThat(items.size, equalTo(NetworkBuffer.items.size))
             }
         }
         group("get operation") {

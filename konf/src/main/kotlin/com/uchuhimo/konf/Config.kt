@@ -18,6 +18,7 @@ interface ConfigGetter {
 }
 
 interface Config : ConfigGetter {
+    operator fun iterator(): Iterator<Item<*>>
     operator fun contains(item: Item<*>): Boolean
     operator fun contains(name: String): Boolean
     operator fun <T : Any> set(item: Item<T>, value: T)
@@ -57,6 +58,28 @@ private class ConfigImpl private constructor(
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
 
     private val lock = ReentrantReadWriteLock()
+
+    override fun iterator(): Iterator<Item<*>> = object : Iterator<Item<*>> {
+        var currentConfig = this@ConfigImpl
+        var current = currentConfig.nameByItem.keys.iterator()
+
+        override tailrec fun hasNext(): Boolean {
+            if (current.hasNext()) {
+                return true
+            } else {
+                val parent = currentConfig.parent
+                if (parent != null) {
+                    currentConfig = parent
+                    current = currentConfig.nameByItem.keys.iterator()
+                    return hasNext()
+                } else {
+                    return false
+                }
+            }
+        }
+
+        override fun next(): Item<*> = current.next()
+    }
 
     override fun <T : Any> get(item: Item<T>): T = getOrNull(item, errorWhenUnset = true) ?:
             throw NoSuchElementException("cannot find ${item.name} in config")
