@@ -4,6 +4,7 @@ import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isIn
 import com.natpryce.hamkrest.or
+import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
 import org.jetbrains.spek.subject.SubjectSpek
@@ -41,6 +42,13 @@ object MultiLayerConfigSpec : SubjectSpek<Config>({
                 assertThat(subject.parent!![NetworkBuffer.name], equalTo("buffer"))
             }
         }
+        on("set parent's value") {
+            subject.parent!![NetworkBuffer.name] = "newName"
+            it("should contain the specified value in both top and parent level") {
+                assertThat(subject[NetworkBuffer.name], equalTo("newName"))
+                assertThat(subject.parent!![NetworkBuffer.name], equalTo("newName"))
+            }
+        }
         on("add spec") {
             val spec = object : ConfigSpec(NetworkBuffer.prefix) {
                 val minSize = optional("minSize", 1)
@@ -51,6 +59,16 @@ object MultiLayerConfigSpec : SubjectSpek<Config>({
                 assertThat(spec.minSize.name in subject, equalTo(true))
                 assertThat(spec.minSize !in subject.parent!!, equalTo(true))
                 assertThat(spec.minSize.name !in subject.parent!!, equalTo(true))
+            }
+        }
+        on("add spec to parent") {
+            val spec = object : ConfigSpec(NetworkBuffer.prefix) {
+                val minSize = optional("minSize", 1)
+            }
+            it("should throw UnsupportedOperationException") {
+                assertThat(
+                        { subject.parent!!.addSpec(spec) },
+                        throws<UnsupportedOperationException>())
             }
         }
         on("iterate items in config after adding spec") {

@@ -35,7 +35,7 @@ open class ConfigSpec(val prefix: String) {
             description: String = "",
             placeholder: String = "",
             noinline default: (ConfigGetter) -> T) =
-            lazy(T::class, name, placeholder, description, default)
+            lazy(T::class, name, description, placeholder, default)
 
     fun <T : Any> lazy(
             type: KClass<T>,

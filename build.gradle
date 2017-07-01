@@ -53,6 +53,12 @@ subprojects {
         }
     }
 
+    afterEvaluate {
+        junitPlatformTest {
+            systemProperty "line.separator", "\n"
+        }
+    }
+
     dependencies {
         compile "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlinVersion"
         compile "org.jetbrains.kotlin:kotlin-reflect:$kotlinVersion"

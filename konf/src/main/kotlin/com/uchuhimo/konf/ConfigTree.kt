@@ -2,21 +2,23 @@ package com.uchuhimo.konf
 
 sealed class ConfigTree {
     abstract val path: List<String>
-    fun <T> visit(
-            context: T,
-            onEnterNode: (T, ConfigNode) -> Unit = { _, _ -> },
-            onLeaveNode: (T, ConfigNode) -> Unit = { _, _ -> },
-            onEnterLeaf: (T, ConfigLeaf<*>) -> Unit = { _, _ -> }) {
+
+    abstract fun deepCopy(): ConfigTree
+
+    fun visit(
+            onEnterNode: (ConfigNode) -> Unit = { _ -> },
+            onLeaveNode: (ConfigNode) -> Unit = { _ -> },
+            onEnterLeaf: (ConfigLeaf<*>) -> Unit = { _ -> }) {
         when (this) {
             is ConfigNode -> {
-                onEnterNode(context, this)
+                onEnterNode(this)
                 for (child in children) {
-                    child.visit(context, onEnterNode, onLeaveNode, onEnterLeaf)
+                    child.visit(onEnterNode, onLeaveNode, onEnterLeaf)
                 }
-                onLeaveNode(context, this)
+                onLeaveNode(this)
             }
             is ConfigLeaf<*> -> {
-                onEnterLeaf(context, this)
+                onEnterLeaf(this)
             }
         }
     }
@@ -24,8 +26,7 @@ sealed class ConfigTree {
     val items: Iterable<Item<*>> get() {
         val items = mutableListOf<Item<*>>()
         visit(
-                items,
-                onEnterLeaf = { items, leaf ->
+                onEnterLeaf = { leaf ->
                     items += leaf.item
                 })
         return items
@@ -35,9 +36,14 @@ sealed class ConfigTree {
 class ConfigLeaf<T : Any>(
         override val path: List<String>,
         val item: Item<T>
-) : ConfigTree()
+) : ConfigTree() {
+    override fun deepCopy(): ConfigLeaf<T> = ConfigLeaf(path, item)
+}
 
 class ConfigNode(
         override val path: List<String>,
         val children: MutableList<ConfigTree>
-) : ConfigTree()
+) : ConfigTree() {
+    override fun deepCopy(): ConfigNode =
+            ConfigNode(path, children.mapTo(mutableListOf(), ConfigTree::deepCopy))
+}

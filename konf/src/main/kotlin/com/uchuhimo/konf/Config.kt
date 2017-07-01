@@ -38,11 +38,10 @@ interface Config : ConfigGetter {
     fun withLayer(name: String = ""): Config
 
     @Suppress("NAME_SHADOWING", "UNUSED_ANONYMOUS_PARAMETER")
-    fun <T> visitAsTree(context: T,
-                        onEnterNode: (T, List<String>) -> Unit = { context, path -> },
-                        onLeaveNode: (T, List<String>) -> Unit = { context, path -> },
-                        onEnterLeaf: (T, List<String>, Item<*>) -> Unit =
-                        { context, path, item -> })
+    fun visitAsTree(
+            onEnterNode: (List<String>) -> Unit = { path -> },
+            onLeaveNode: (List<String>) -> Unit = { path -> },
+            onEnterLeaf: (List<String>, Item<*>) -> Unit = { path, item -> })
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
@@ -65,7 +64,14 @@ private class ConfigImpl private constructor(
     private val specsInLayer = mutableListOf<ConfigSpec>()
     private val valueByItem = mutableMapOf<Item<*>, ValueState>()
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
-    private val tree: ConfigTree = ConfigNode(path = emptyList(), children = mutableListOf())
+    private val tree: ConfigTree = run {
+        if (parent != null) {
+            parent.tree.deepCopy()
+        } else {
+            ConfigNode(path = emptyList(), children = mutableListOf())
+        }
+    }
+    private var hasChildren = false
 
     private val lock = ReentrantReadWriteLock()
 
@@ -91,15 +97,14 @@ private class ConfigImpl private constructor(
         override fun next(): Item<*> = current.next()
     }
 
-    override fun <T> visitAsTree(context: T,
-                                 onEnterNode: (T, List<String>) -> Unit,
-                                 onLeaveNode: (T, List<String>) -> Unit,
-                                 onEnterLeaf: (T, List<String>, Item<*>) -> Unit) {
+    override fun visitAsTree(
+            onEnterNode: (List<String>) -> Unit,
+            onLeaveNode: (List<String>) -> Unit,
+            onEnterLeaf: (List<String>, Item<*>) -> Unit) {
         tree.visit(
-                context,
-                onEnterNode = { context, node -> onEnterNode(context, node.path) },
-                onLeaveNode = { context, node -> onLeaveNode(context, node.path) },
-                onEnterLeaf = { context, leaf -> onEnterLeaf(context, leaf.path, leaf.item) })
+                onLeaveNode = { node -> onLeaveNode(node.path) },
+                onEnterNode = { node -> onEnterNode(node.path) },
+                onEnterLeaf = { leaf -> onEnterLeaf(leaf.path, leaf.item) })
     }
 
     override fun <T : Any> get(item: Item<T>): T = getOrNull(item, errorWhenUnset = true) ?:
@@ -349,6 +354,10 @@ private class ConfigImpl private constructor(
 
     override fun addSpec(spec: ConfigSpec) {
         lock.write {
+            if (hasChildren) {
+                throw UnsupportedOperationException(
+                        "this config has children layer, cannot add new spec")
+            }
             spec.items.forEach { item ->
                 val name = item.name
                 if (item !in this) {
@@ -371,7 +380,10 @@ private class ConfigImpl private constructor(
         }
     }
 
-    override fun withLayer(name: String) = ConfigImpl(name, this)
+    override fun withLayer(name: String): Config {
+        lock.write { hasChildren = true }
+        return ConfigImpl(name, this)
+    }
 
     private sealed class ValueState {
         object Unset : ValueState()
