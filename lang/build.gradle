@@ -1,6 +1,14 @@
+ext {
+    configurateVersion = "3.3"
+}
+
 dependencies {
 	compile project(":kotlinx-bimap")
     compile "org.openjdk.jol:jol-core:0.8"
     compile "org.openjdk.jol:jol-samples:0.8"
     compile "com.lmax:disruptor:3.3.6"
+    compile "ninja.leaping.configurate:configurate-yaml:$configurateVersion"
+    compile "ninja.leaping.configurate:configurate-hocon:$configurateVersion"
+    compile "ninja.leaping.configurate:configurate-json:$configurateVersion"
+    compile "ninja.leaping.configurate:configurate-gson:$configurateVersion"
 }
