@@ -33,8 +33,16 @@ interface Config : ConfigGetter {
 
     val name: String
     val parent: Config?
+    val specs: Iterable<ConfigSpec>
     fun addSpec(spec: ConfigSpec)
     fun withLayer(name: String = ""): Config
+
+    @Suppress("NAME_SHADOWING", "UNUSED_ANONYMOUS_PARAMETER")
+    fun <T> visitAsTree(context: T,
+                        onEnterNode: (T, List<String>) -> Unit = { context, path -> },
+                        onLeaveNode: (T, List<String>) -> Unit = { context, path -> },
+                        onEnterLeaf: (T, List<String>, Item<*>) -> Unit =
+                        { context, path, item -> })
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
@@ -54,6 +62,7 @@ private class ConfigImpl private constructor(
 ) : Config {
     constructor() : this("", null)
 
+    private val specsInLayer = mutableListOf<ConfigSpec>()
     private val valueByItem = mutableMapOf<Item<*>, ValueState>()
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
     private val tree: ConfigTree = ConfigNode(path = emptyList(), children = mutableListOf())
@@ -80,6 +89,17 @@ private class ConfigImpl private constructor(
         }
 
         override fun next(): Item<*> = current.next()
+    }
+
+    override fun <T> visitAsTree(context: T,
+                                 onEnterNode: (T, List<String>) -> Unit,
+                                 onLeaveNode: (T, List<String>) -> Unit,
+                                 onEnterLeaf: (T, List<String>, Item<*>) -> Unit) {
+        tree.visit(
+                context,
+                onEnterNode = { context, node -> onEnterNode(context, node.path) },
+                onLeaveNode = { context, node -> onLeaveNode(context, node.path) },
+                onEnterLeaf = { context, leaf -> onEnterLeaf(context, leaf.path, leaf.item) })
     }
 
     override fun <T : Any> get(item: Item<T>): T = getOrNull(item, errorWhenUnset = true) ?:
@@ -303,6 +323,30 @@ private class ConfigImpl private constructor(
         }
     }
 
+    override val specs: Iterable<ConfigSpec> = object : Iterable<ConfigSpec> {
+        override fun iterator(): Iterator<ConfigSpec> = object : Iterator<ConfigSpec> {
+            var currentConfig = this@ConfigImpl
+            var current = currentConfig.specsInLayer.iterator()
+
+            override tailrec fun hasNext(): Boolean {
+                if (current.hasNext()) {
+                    return true
+                } else {
+                    val parent = currentConfig.parent
+                    if (parent != null) {
+                        currentConfig = parent
+                        current = currentConfig.specsInLayer.iterator()
+                        return hasNext()
+                    } else {
+                        return false
+                    }
+                }
+            }
+
+            override fun next(): ConfigSpec = current.next()
+        }
+    }
+
     override fun addSpec(spec: ConfigSpec) {
         lock.write {
             spec.items.forEach { item ->
@@ -323,6 +367,7 @@ private class ConfigImpl private constructor(
                     throw RepeatedItemException("item $name has been added")
                 }
             }
+            specsInLayer += spec
         }
     }
 

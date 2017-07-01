@@ -26,6 +26,10 @@ object ConfigSpek : SubjectSpek<Config>({
                     assertThat(spec.minSize in subject, equalTo(true))
                     assertThat(spec.minSize.name in subject, equalTo(true))
                 }
+                it("should contain new spec") {
+                    assertThat(spec in subject.specs, equalTo(true))
+                    assertThat(NetworkBuffer in subject.specs, equalTo(true))
+                }
             }
             on("add repeated item") {
                 it("should throw RepeatedItemException") {
