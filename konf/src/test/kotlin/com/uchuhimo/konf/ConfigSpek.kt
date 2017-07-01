@@ -34,8 +34,22 @@ object ConfigSpek : SubjectSpek<Config>({
             }
             on("add repeated name") {
                 val spec = ConfigSpec(NetworkBuffer.prefix).apply { required<Int>("size") }
-                it("should throw RepeatedNameException") {
-                    assertThat({ subject.addSpec(spec) }, throws<RepeatedNameException>())
+                it("should throw NameConflictException") {
+                    assertThat({ subject.addSpec(spec) }, throws<NameConflictException>())
+                }
+            }
+            on("add conflict name, which is prefix of existed name") {
+                val spec = ConfigSpec("network").apply { required<Int>("buffer") }
+                it("should throw NameConflictException") {
+                    assertThat({ subject.addSpec(spec) }, throws<NameConflictException>())
+                }
+            }
+            on("add conflict name, and an existed name is prefix of it") {
+                val spec = ConfigSpec(NetworkBuffer.type.name).apply {
+                    required<Int>("subType")
+                }
+                it("should throw NameConflictException") {
+                    assertThat({ subject.addSpec(spec) }, throws<NameConflictException>())
                 }
             }
         }

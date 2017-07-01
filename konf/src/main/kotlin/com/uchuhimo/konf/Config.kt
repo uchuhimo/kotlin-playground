@@ -44,7 +44,7 @@ interface Config : ConfigGetter {
 
 class RepeatedItemException(message: String) : Exception(message)
 
-class RepeatedNameException(message: String) : Exception(message)
+class NameConflictException(message: String) : Exception(message)
 
 class InvalidLazySetException(message: String) : Exception(message)
 
@@ -56,6 +56,7 @@ private class ConfigImpl private constructor(
 
     private val valueByItem = mutableMapOf<Item<*>, ValueState>()
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
+    private val tree: ConfigTree = ConfigNode(path = emptyList(), children = mutableListOf())
 
     private val lock = ReentrantReadWriteLock()
 
@@ -270,12 +271,45 @@ private class ConfigImpl private constructor(
         }
     }
 
+    private tailrec fun addNode(tree: ConfigTree, path: List<String>, item: Item<*>) {
+        when (tree) {
+            is ConfigNode -> {
+                if (path.isEmpty()) {
+                    throw NameConflictException("${item.name} cannot be added" +
+                            " since the following items has been added to config:" +
+                            " ${tree.items.joinToString { it.name }}")
+                }
+                val matchChild = tree.children.find { it.path.last() == path[0] }
+                if (matchChild != null) {
+                    addNode(matchChild, path.drop(1), item)
+                } else {
+                    if (path.size == 1) {
+                        tree.children += ConfigLeaf(tree.path + path[0], item)
+                    } else {
+                        val child = ConfigNode(tree.path + path[0], mutableListOf())
+                        tree.children += child
+                        addNode(child, path.drop(1), item)
+                    }
+                }
+            }
+            is ConfigLeaf<*> -> {
+                if (path.isEmpty()) {
+                    throw NameConflictException("item ${item.name} has been added")
+                } else {
+                    throw NameConflictException("${item.name} cannot be added" +
+                            " since item ${tree.item.name} has been added to config")
+                }
+            }
+        }
+    }
+
     override fun addSpec(spec: ConfigSpec) {
         lock.write {
             spec.items.forEach { item ->
                 val name = item.name
                 if (item !in this) {
                     if (name !in this) {
+                        addNode(tree, item.path, item)
                         nameByItem[item] = name
                         valueByItem[item] = when (item) {
                             is OptionalItem -> ValueState.Value(item.default)
@@ -283,7 +317,7 @@ private class ConfigImpl private constructor(
                             is LazyItem -> ValueState.Lazy(item.thunk)
                         }
                     } else {
-                        throw RepeatedNameException("item $name has been added")
+                        throw NameConflictException("item $name has been added")
                     }
                 } else {
                     throw RepeatedItemException("item $name has been added")

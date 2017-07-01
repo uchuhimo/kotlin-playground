@@ -5,7 +5,13 @@ import kotlin.reflect.KClass
 sealed class Item<T : Any>(
         val name: String,
         val type: KClass<T>,
-        val description: String = "")
+        val description: String = "") {
+    val path: List<String> = run {
+        val path = name.split('.')
+        check("" !in path) { "$name is invalid name for item" }
+        path
+    }
+}
 
 class RequiredItem<T : Any>(name: String, type: KClass<T>, description: String = "") :
         Item<T>(name, type, description)
