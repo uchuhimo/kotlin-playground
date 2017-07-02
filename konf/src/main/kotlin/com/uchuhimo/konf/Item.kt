@@ -1,32 +1,32 @@
 package com.uchuhimo.konf
 
-import kotlin.reflect.KClass
+import com.fasterxml.jackson.databind.JavaType
+import com.fasterxml.jackson.databind.type.TypeFactory
 
 sealed class Item<T : Any>(
         val name: String,
-        val type: KClass<T>,
         val description: String = "") {
     val path: List<String> = run {
         val path = name.split('.')
         check("" !in path) { "$name is invalid name for item" }
         path
     }
+    val type: JavaType = TypeFactory.defaultInstance().constructType(this::class.java)
+            .findSuperType(Item::class.java).bindings.typeParameters[0]
 }
 
-class RequiredItem<T : Any>(name: String, type: KClass<T>, description: String = "") :
-        Item<T>(name, type, description)
+open class RequiredItem<T : Any>(name: String, description: String = "") :
+        Item<T>(name, description)
 
-class OptionalItem<T : Any>(
+open class OptionalItem<T : Any>(
         name: String,
-        type: KClass<T>,
         val default: T,
         description: String = ""
-) : Item<T>(name, type, description)
+) : Item<T>(name, description)
 
-class LazyItem<T : Any>(
+open class LazyItem<T : Any>(
         name: String,
-        type: KClass<T>,
         val thunk: (ConfigGetter) -> T,
         val placeholder: String = "",
         description: String = ""
-) : Item<T>(name, type, description)
+) : Item<T>(name, description)

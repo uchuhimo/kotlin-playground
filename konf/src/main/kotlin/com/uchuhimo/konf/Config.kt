@@ -7,7 +7,6 @@ import kotlin.concurrent.read
 import kotlin.concurrent.write
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
-import kotlin.reflect.full.isSubclassOf
 
 interface ConfigGetter {
     operator fun <T : Any> get(item: Item<T>): T
@@ -21,6 +20,7 @@ interface Config : ConfigGetter {
     operator fun iterator(): Iterator<Item<*>>
     operator fun contains(item: Item<*>): Boolean
     operator fun contains(name: String): Boolean
+    fun rawSet(item: Item<*>, value: Any)
     operator fun <T : Any> set(item: Item<T>, value: T)
     operator fun <T : Any> set(name: String, value: T)
     fun <T : Any> lazySet(item: Item<T>, lazyThunk: (ConfigGetter) -> T)
@@ -131,14 +131,14 @@ private class ConfigImpl private constructor(
                     } else {
                         return null
                     }
-                is ValueState.Value<*> -> valueState.value as T
+                is ValueState.Value -> valueState.value as T
                 is ValueState.Lazy<*> -> {
                     val value = valueState.thunk(lazyContext)!!
-                    if (value::class.isSubclassOf(item.type)) {
+                    if (item.type.rawClass.isInstance(value)) {
                         value as T
                     } else {
                         throw InvalidLazySetException(
-                                "fail to cast $value with ${value::class} to ${item.type}" +
+                                "fail to cast $value with ${value::class} to ${item.type.rawClass}" +
                                         " when getting ${item.name} in config")
                     }
                 }
@@ -197,14 +197,13 @@ private class ConfigImpl private constructor(
         }
     }
 
-    override fun <T : Any> set(item: Item<T>, value: T) {
-        if (value::class.isSubclassOf(item.type)) {
+    override fun rawSet(item: Item<*>, value: Any) {
+        if (item.type.rawClass.isInstance(value)) {
             if (item in this) {
                 lock.write {
                     val valueState = valueByItem[item]
-                    if (valueState is ValueState.Value<*>) {
-                        @Suppress("UNCHECKED_CAST")
-                        (valueState as ValueState.Value<T>).value = value
+                    if (valueState is ValueState.Value) {
+                        valueState.value = value
                     } else {
                         valueByItem[item] = ValueState.Value(value)
                     }
@@ -214,9 +213,13 @@ private class ConfigImpl private constructor(
             }
         } else {
             throw ClassCastException(
-                    "fail to cast $value with ${value::class} to ${item.type}" +
+                    "fail to cast $value with ${value::class} to ${item.type.rawClass}" +
                             " when setting ${item.name} in config")
         }
+    }
+
+    override fun <T : Any> set(item: Item<T>, value: T) {
+        rawSet(item, value)
     }
 
     override fun <T : Any> set(name: String, value: T) {
@@ -388,6 +391,6 @@ private class ConfigImpl private constructor(
     private sealed class ValueState {
         object Unset : ValueState()
         data class Lazy<T>(var thunk: (ConfigGetter) -> T) : ValueState()
-        data class Value<T>(var value: T) : ValueState()
+        data class Value(var value: Any) : ValueState()
     }
 }
