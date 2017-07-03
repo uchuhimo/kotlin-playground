@@ -5,22 +5,22 @@ open class ConfigSpec(val prefix: String) {
 
     val items: List<Item<*>> = _items
 
-    fun qualify(name: String) = "$prefix.$name"
-
     @Suppress("NOTHING_TO_INLINE")
     inline fun <T : Any> required(name: String, description: String = "") =
             object : RequiredItem<T>(
-                    name = qualify(name),
+                    spec = this,
+                    name = name,
                     description = description
-            ) {}.also { addItem(it) }
+            ) {}
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun <T : Any> optional(name: String, default: T, description: String = "") =
             object : OptionalItem<T>(
-                    name = qualify(name),
+                    spec = this,
+                    name = name,
                     default = default,
                     description = description
-            ) {}.also { addItem(it) }
+            ) {}
 
     @Suppress("NOTHING_TO_INLINE")
     inline fun <T : Any> lazy(
@@ -29,13 +29,16 @@ open class ConfigSpec(val prefix: String) {
             placeholder: String = "",
             noinline default: (ConfigGetter) -> T) =
             object : LazyItem<T>(
-                    name = qualify(name),
+                    spec = this,
+                    name = name,
                     thunk = default,
                     placeholder = placeholder,
                     description = description
-            ) {}.also { addItem(it) }
+            ) {}
 
-    fun addItem(item: Item<*>) {
+    internal fun qualify(name: String) = "$prefix.$name"
+
+    internal fun addItem(item: Item<*>) {
         _items += item
     }
 }

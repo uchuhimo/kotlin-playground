@@ -33,7 +33,11 @@ interface Config : ConfigGetter {
 
     val name: String
     val parent: Config?
-    val specs: Iterable<ConfigSpec>
+    val items: List<Item<*>> get() = mutableListOf<Item<*>>().apply {
+        addAll(this@Config.iterator().asSequence())
+    }
+
+    val specs: List<ConfigSpec>
     fun addSpec(spec: ConfigSpec)
     fun withLayer(name: String = ""): Config
 
@@ -45,6 +49,7 @@ interface Config : ConfigGetter {
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
+
         operator fun invoke(init: Config.() -> Unit): Config = Config().apply(init)
     }
 }
@@ -331,8 +336,8 @@ private class ConfigImpl private constructor(
         }
     }
 
-    override val specs: Iterable<ConfigSpec> = object : Iterable<ConfigSpec> {
-        override fun iterator(): Iterator<ConfigSpec> = object : Iterator<ConfigSpec> {
+    override val specs: List<ConfigSpec> get() = mutableListOf<ConfigSpec>().apply {
+        addAll(object : Iterator<ConfigSpec> {
             var currentConfig = this@ConfigImpl
             var current = currentConfig.specsInLayer.iterator()
 
@@ -352,7 +357,7 @@ private class ConfigImpl private constructor(
             }
 
             override fun next(): ConfigSpec = current.next()
-        }
+        }.asSequence())
     }
 
     override fun addSpec(spec: ConfigSpec) {
