@@ -9,4 +9,6 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-annotations:$jacksonVersion"
     compile "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion"
     compile "org.yaml:snakeyaml:1.18"
+    testCompile "com.sparkjava:spark-core:2.6.0"
+    testCompile "org.slf4j:slf4j-simple:1.7.25"
 }
