@@ -14,7 +14,7 @@ import kotlin.coroutines.experimental.startCoroutine
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-open class Benchmark {
+class Benchmark {
     @Benchmark
     fun createClosure() {
         val function = { 1 + 1 }

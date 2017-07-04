@@ -19,15 +19,15 @@ class Buffer {
 
 @BenchmarkMode(AverageTime)
 @OutputTimeUnit(NANOSECONDS)
-open class ConfigBenchmark {
+class ConfigBenchmark {
 
     @State(Scope.Thread)
-    open class ConfigState {
+    class ConfigState {
         val config = Config { addSpec(Buffer) }
     }
 
     @State(Scope.Benchmark)
-    open class MultiThreadConfigState {
+    class MultiThreadConfigState {
         val config = Config { addSpec(Buffer) }
     }
 
@@ -67,15 +67,15 @@ open class ConfigBenchmark {
 
 @BenchmarkMode(AverageTime)
 @OutputTimeUnit(NANOSECONDS)
-open class MultiLevelConfigBenchmark {
+class MultiLevelConfigBenchmark {
 
     @State(Scope.Thread)
-    open class ConfigState {
+    class ConfigState {
         val config = Config { addSpec(Buffer) }.withLayer().withLayer().withLayer().withLayer()
     }
 
     @State(Scope.Benchmark)
-    open class MultiThreadConfigState {
+    class MultiThreadConfigState {
         val config = Config { addSpec(Buffer) }.withLayer().withLayer().withLayer().withLayer()
     }
 
