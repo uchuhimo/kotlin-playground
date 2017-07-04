@@ -43,8 +43,6 @@ import kotlin.collections.component2
 interface Source {
     val description: String
 
-    val type: SourceType
-
     fun contains(path: Path): Boolean
 
     fun getOrNull(path: Path): Source?
@@ -92,7 +90,7 @@ interface Source {
     fun toChar(): Char {
         val value = toText()
         if (value.length != 1) {
-            throw WrongTypeException(this, SourceType.Char)
+            throw WrongTypeException(this, "String", "Char")
         }
         return value[0]
     }
@@ -163,12 +161,6 @@ fun Config.load(source: Source) {
                 throw LoadException(path, cause)
             }
         }
-    }
-}
-
-fun Source.checkType(type: SourceType) {
-    if (this.type != type) {
-        throw WrongTypeException(this, type)
     }
 }
 

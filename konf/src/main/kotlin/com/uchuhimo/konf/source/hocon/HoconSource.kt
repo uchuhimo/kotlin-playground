@@ -4,13 +4,10 @@ import com.typesafe.config.Config
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.name
 import com.uchuhimo.konf.source.Source
-import com.uchuhimo.konf.source.SourceType
 import com.uchuhimo.konf.unsupported
 
 class HoconSource(val config: Config) : Source {
     override val description: String get() = config.origin().description()
-
-    override val type: SourceType get() = unsupported()
 
     override fun contains(path: Path): Boolean = config.hasPath(path.name)
 

@@ -9,8 +9,8 @@ open class SourceException : ConfigException {
     constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
-class WrongTypeException(source: Source, expected: SourceType) :
-        SourceException("${source.description} has type ${source.type.name} rather than ${expected.name}")
+class WrongTypeException(source: Source, actual: String, expected: String) :
+        SourceException("${source.description} has type $actual rather than $expected")
 
 class NoSuchPathException(source: Source, path: Path) :
         SourceException("cannot find path \"${path.name}\" in ${source.description}")

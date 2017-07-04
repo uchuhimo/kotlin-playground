@@ -7,15 +7,40 @@ import com.typesafe.config.ConfigValueType
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.source.ParseException
 import com.uchuhimo.konf.source.Source
-import com.uchuhimo.konf.source.SourceType
 import com.uchuhimo.konf.source.WrongTypeException
-import com.uchuhimo.konf.source.checkType
 
 class HoconValueSource(val value: ConfigValue) : Source {
     override val description: String get() = value.origin().description()
 
+    private val type = value.valueType()
+
+    private fun checkType(actual: ConfigValueType, expected: ConfigValueType) {
+        if (actual != expected) {
+            throw WrongTypeException(this, "HOCON(${actual.name})", "HOCON(${expected.name})")
+        }
+    }
+
+    enum class NumType {
+        Int, Long, Double
+    }
+
+    private fun checkNumType(expected: NumType) {
+        val unwrappedValue = value.unwrapped()
+        val type = when (unwrappedValue) {
+            is Int -> NumType.Int
+            is Long -> NumType.Long
+            is Double -> NumType.Double
+            else -> throw ParseException(
+                    "value $unwrappedValue with type ${unwrappedValue::class.java.simpleName}" +
+                            " is not a valid number(Int/Long/Double)")
+        }
+        if (type != expected) {
+            throw WrongTypeException(this, "HOCON(${type.name})", "HOCON(${expected.name})")
+        }
+    }
+
     private val hoconSource: HoconSource by lazy {
-        checkType(SourceType.Map)
+        checkType(type, ConfigValueType.OBJECT)
         HoconSource((value as ConfigObject).toConfig())
     }
 
@@ -23,28 +48,8 @@ class HoconValueSource(val value: ConfigValue) : Source {
 
     override fun getOrNull(path: Path): Source? = hoconSource.getOrNull(path)
 
-    @Suppress("WHEN_ENUM_CAN_BE_NULL_IN_JAVA")
-    override val type: SourceType = when (value.valueType()) {
-        ConfigValueType.OBJECT -> SourceType.Map
-        ConfigValueType.LIST -> SourceType.List
-        ConfigValueType.NUMBER -> {
-            val unwrappedValue = value.unwrapped()
-            when (unwrappedValue) {
-                is Int -> SourceType.Int
-                is Long -> SourceType.Long
-                is Double -> SourceType.Double
-                else -> throw ParseException(
-                        "value $unwrappedValue with type ${unwrappedValue::class.java.simpleName}" +
-                                " is not a valid number(Int/Long/Double)")
-            }
-        }
-        ConfigValueType.BOOLEAN -> SourceType.Boolean
-        ConfigValueType.STRING -> SourceType.String
-        ConfigValueType.NULL -> error("")
-    }
-
     override fun toList(): List<Source> {
-        checkType(SourceType.List)
+        checkType(type, ConfigValueType.LIST)
         return mutableListOf<Source>().apply {
             for (value in (value as ConfigList)) {
                 add(HoconValueSource(value))
@@ -53,7 +58,7 @@ class HoconValueSource(val value: ConfigValue) : Source {
     }
 
     override fun toMap(): Map<String, Source> {
-        checkType(SourceType.Map)
+        checkType(type, ConfigValueType.OBJECT)
         return mutableMapOf<String, Source>().apply {
             for ((key, value) in (value as ConfigObject)) {
                 put(key, HoconValueSource(value))
@@ -62,25 +67,26 @@ class HoconValueSource(val value: ConfigValue) : Source {
     }
 
     override fun toText(): String {
-        checkType(SourceType.String)
+        checkType(type, ConfigValueType.STRING)
         return value.unwrapped() as String
     }
 
     override fun toBoolean(): Boolean {
-        checkType(SourceType.Boolean)
+        checkType(type, ConfigValueType.BOOLEAN)
         return value.unwrapped() as Boolean
     }
 
     override fun toDouble(): Double {
         try {
-            checkType(SourceType.Double)
+            checkType(type, ConfigValueType.NUMBER)
+            checkNumType(NumType.Double)
             return value.unwrapped() as Double
         } catch (e: WrongTypeException) {
             try {
-                checkType(SourceType.Long)
+                checkNumType(NumType.Long)
                 return (value.unwrapped() as Long).toDouble()
             } catch (e: WrongTypeException) {
-                checkType(SourceType.Int)
+                checkNumType(NumType.Int)
                 return (value.unwrapped() as Int).toDouble()
             }
         }
@@ -88,16 +94,18 @@ class HoconValueSource(val value: ConfigValue) : Source {
 
     override fun toLong(): Long {
         try {
-            checkType(SourceType.Long)
+            checkType(type, ConfigValueType.NUMBER)
+            checkNumType(NumType.Long)
             return value.unwrapped() as Long
         } catch (e: WrongTypeException) {
-            checkType(SourceType.Int)
+            checkNumType(NumType.Int)
             return (value.unwrapped() as Int).toLong()
         }
     }
 
     override fun toInt(): Int {
-        checkType(SourceType.Int)
+        checkType(type, ConfigValueType.NUMBER)
+        checkNumType(NumType.Int)
         return value.unwrapped() as Int
     }
 }
