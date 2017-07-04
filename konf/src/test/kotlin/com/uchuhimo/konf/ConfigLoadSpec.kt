@@ -18,6 +18,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
+import java.time.Year
+import java.time.YearMonth
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -56,6 +58,10 @@ object ConfigLoadSpec : SubjectSpek<Config>({
                         equalTo(LocalTime.parse("10:15:30")))
                 assertThat(subject[ConfigForLoad.localDateTime],
                         equalTo(LocalDateTime.parse("2007-12-03T10:15:30")))
+                assertThat(subject[ConfigForLoad.year],
+                        equalTo(Year.parse("2007")))
+                assertThat(subject[ConfigForLoad.yearMonth],
+                        equalTo(YearMonth.parse("2007-12")))
                 assertThat(subject[ConfigForLoad.instantTime],
                         equalTo(Instant.parse("2007-12-03T10:15:30.00Z")))
                 assertThat(subject[ConfigForLoad.durationTime],
@@ -152,6 +158,8 @@ level1 {
         localDate = 2007-12-03
         localTime = "10:15:30"
         localDateTime = "2007-12-03T10:15:30"
+        year = "2007"
+        yearMonth = 2007-12
         instant = "2007-12-03T10:15:30.00Z"
         duration = P2DT3H4M
         simpleDuration = 200millis

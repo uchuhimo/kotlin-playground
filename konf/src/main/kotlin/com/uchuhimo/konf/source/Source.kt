@@ -19,6 +19,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
+import java.time.Year
+import java.time.YearMonth
 import java.time.ZonedDateTime
 import java.time.format.DateTimeParseException
 import java.util.SortedSet
@@ -111,6 +113,10 @@ interface Source {
 
     fun toLocalDateTime(): LocalDateTime = LocalDateTime.parse(toText())
 
+    fun toYear(): Year = Year.parse(toText())
+
+    fun toYearMonth(): YearMonth = YearMonth.parse(toText())
+
     fun toInstant(): Instant = Instant.parse(toText())
 
     fun toDuration(): Duration {
@@ -198,6 +204,8 @@ fun Source.toValue(type: JavaType): Any {
                     LocalDate::class.java -> toLocalDate()
                     LocalTime::class.java -> toLocalTime()
                     LocalDateTime::class.java -> toLocalDateTime()
+                    Year::class.java -> toYear()
+                    YearMonth::class.java -> toYearMonth()
                     Instant::class.java -> toInstant()
                     Duration::class.java -> toDuration()
                     SizeInBytes::class.java -> toSizeInBytes()

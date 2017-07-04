@@ -9,6 +9,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
 import java.time.OffsetTime
+import java.time.Year
+import java.time.YearMonth
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -34,6 +36,8 @@ object ConfigForLoad : ConfigSpec("level1.level2") {
     val localDateItem = required<LocalDate>("localDate")
     val localTimeItem = required<LocalTime>("localTime")
     val localDateTime = required<LocalDateTime>("localDateTime")
+    val year = required<Year>("year")
+    val yearMonth = required<YearMonth>("yearMonth")
     val instantTime = required<Instant>("instant")
     val durationTime = required<Duration>("duration")
     val simpleDurationTime = required<Duration>("simpleDuration")
