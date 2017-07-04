@@ -1,17 +1,15 @@
-package com.uchuhimo.konf
+package com.uchuhimo.konf.source
 
 import com.fasterxml.jackson.databind.JavaType
 import com.fasterxml.jackson.databind.type.ArrayType
 import com.fasterxml.jackson.databind.type.CollectionLikeType
 import com.fasterxml.jackson.databind.type.MapLikeType
 import com.fasterxml.jackson.databind.type.SimpleType
-import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigList
-import com.typesafe.config.ConfigObject
-import com.typesafe.config.ConfigValue
-import com.typesafe.config.ConfigValueType
 import com.typesafe.config.impl.ConfigImplUtil
-import java.io.File
+import com.uchuhimo.konf.Config
+import com.uchuhimo.konf.Path
+import com.uchuhimo.konf.SizeInBytes
+import java.lang.Class
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Duration
@@ -26,127 +24,184 @@ import java.time.format.DateTimeParseException
 import java.util.SortedSet
 import java.util.TreeSet
 import java.util.concurrent.TimeUnit
+import kotlin.Byte
+import kotlin.Char
+import kotlin.Double
+import kotlin.Float
+import kotlin.Int
+import kotlin.Long
+import kotlin.Short
+import kotlin.String
 import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.collections.HashSet
-import com.typesafe.config.Config as HoconConfig
+import kotlin.collections.component1
+import kotlin.collections.component2
 
-private fun ConfigValue.checkType(type: ConfigValueType) {
-    check(valueType() == type) { "expect type ${valueType()}, get type $type" }
-}
+interface Source {
+    val description: String
 
-private fun ConfigValue.toIntValue(): Int {
-    checkType(ConfigValueType.NUMBER)
-    val value = unwrapped()
-    check(value is Int) { "expect an integer, get a ${value::class.java}" }
-    return value as Int
-}
+    val type: SourceType
 
-private fun ConfigValue.toLongValue(): Long {
-    checkType(ConfigValueType.NUMBER)
-    val value = unwrapped()
-    check(value is Int || value is Long) {
-        "expect a long, get a ${value::class.java}"
+    fun contains(path: Path): Boolean
+
+    fun getOrNull(path: Path): Source?
+
+    fun get(path: Path): Source = getOrNull(path) ?: throw NoSuchPathException(this, path)
+
+    fun contains(key: String): Boolean = contains(key.toPath())
+
+    fun getOrNull(key: String): Source? = getOrNull(key.toPath())
+
+    fun get(key: String): Source = get(key.toPath())
+
+    fun toList(): List<Source>
+
+    fun toMap(): Map<String, Source>
+
+    fun toText(): String
+
+    fun toBoolean(): Boolean
+
+    fun toLong(): Long
+
+    fun toDouble(): Double
+
+    fun toInt(): Int = toLong().also { value ->
+        if (value < Int.MIN_VALUE || value > Int.MAX_VALUE) {
+            throw ParseException("$value is out of range of Int")
+        }
+    }.toInt()
+
+    fun toShort(): Short = toInt().also { value ->
+        if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
+            throw ParseException("$value is out of range of Short")
+        }
+    }.toShort()
+
+    fun toByte(): Byte = toInt().also { value ->
+        if (value < Byte.MIN_VALUE || value > Byte.MAX_VALUE) {
+            throw ParseException("$value is out of range of Byte")
+        }
+    }.toByte()
+
+    fun toFloat(): Float = toDouble().toFloat()
+
+    fun toChar(): Char {
+        val value = toText()
+        if (value.length != 1) {
+            throw WrongTypeException(this, SourceType.Char)
+        }
+        return value[0]
     }
-    if (value is Int) {
-        return value.toLong()
-    } else {
-        return value as Long
+
+    fun toBigInteger(): BigInteger = BigInteger.valueOf(toLong())
+
+    fun toBigDecimal(): BigDecimal = BigDecimal.valueOf(toDouble())
+
+    fun toOffsetTime(): OffsetTime = OffsetTime.parse(toText())
+
+    fun toOffsetDateTime(): OffsetDateTime = OffsetDateTime.parse(toText())
+
+    fun toZonedDateTime(): ZonedDateTime = ZonedDateTime.parse(toText())
+
+    fun toLocalDate(): LocalDate = LocalDate.parse(toText())
+
+    fun toLocalTime(): LocalTime = LocalTime.parse(toText())
+
+    fun toLocalDateTime(): LocalDateTime = LocalDateTime.parse(toText())
+
+    fun toInstant(): Instant = Instant.parse(toText())
+
+    fun toDuration(): Duration {
+        val value = toText()
+        try {
+            return Duration.parse(value)
+        } catch (e: DateTimeParseException) {
+            return Duration.ofNanos(parseDuration(value))
+        }
     }
+
+    fun toSizeInBytes() = SizeInBytes(parseBytes(toText()))
 }
 
-private fun ConfigValue.toStringValue(): String {
-    checkType(ConfigValueType.STRING)
-    return unwrapped() as String
+fun String.toPath(): Path = listOf(this)
+
+fun Source.withFallback(fallback: Source): Source = object : Source by this {
+    override fun contains(path: List<String>): Boolean =
+            this@withFallback.contains(path) || fallback.contains(path)
+
+    override fun get(path: List<String>): Source =
+            this@withFallback.getOrNull(path) ?: fallback.get(path)
+
+    override fun getOrNull(path: List<String>): Source? =
+            this@withFallback.getOrNull(path) ?: fallback.getOrNull(path)
+
+    override fun contains(key: String): Boolean =
+            this@withFallback.contains(key) || fallback.contains(key)
+
+    override fun get(key: String): Source =
+            this@withFallback.getOrNull(key) ?: fallback.get(key)
+
+    override fun getOrNull(key: String): Source? =
+            this@withFallback.getOrNull(key) ?: fallback.getOrNull(key)
 }
 
-private fun ConfigValue.toListValue(type: JavaType): List<Any> {
-    checkType(ConfigValueType.LIST)
-    return mutableListOf<Any>().apply {
-        for (value in (this@toListValue as ConfigList)) {
-            add(value.toItemValue(type))
+fun Config.load(source: Source) {
+    for (item in this) {
+        val path = item.path
+        if (source.contains(path)) {
+            try {
+                rawSet(item, source.get(path).toValue(item.type))
+            } catch (cause: SourceException) {
+                throw LoadException(path, cause)
+            }
         }
     }
 }
 
-private fun implOf(clazz: Class<*>): Class<*> =
-        when (clazz) {
-            List::class.java, MutableList::class.java -> ArrayList::class.java
-            Set::class.java, MutableSet::class.java -> HashSet::class.java
-            SortedSet::class.java -> TreeSet::class.java
-            Map::class.java, MutableMap::class.java -> HashMap::class.java
-            else -> clazz
-        }
+fun Source.checkType(type: SourceType) {
+    if (this.type != type) {
+        throw WrongTypeException(this, type)
+    }
+}
 
-private fun ConfigValue.toItemValue(type: JavaType): Any {
+fun Source.toValue(type: JavaType): Any {
     when (type) {
         is SimpleType -> {
             val clazz = type.rawClass
-            when (clazz) {
-                Boolean::class.javaObjectType, Boolean::class.java -> {
-                    checkType(ConfigValueType.BOOLEAN)
-                    return unwrapped() as Boolean
+            if (type.isEnumType) {
+                val valueOfMethod = clazz.getMethod("valueOf", String::class.java)
+                val name = toText()
+                try {
+                    return valueOfMethod.invoke(null, name)
+                } catch (cause: IllegalArgumentException) {
+                    throw ParseException(
+                            "enum type $clazz has no constant with name $name", cause)
                 }
-                Int::class.javaObjectType, Int::class.java -> return toIntValue()
-                Short::class.javaObjectType, Short::class.java -> return toIntValue().also { value ->
-                    check(value >= Short.MIN_VALUE && value <= Short.MAX_VALUE) {
-                        "$value is out of range of short"
-                    }
-                }.toShort()
-                Byte::class.javaObjectType, Byte::class.java -> return toIntValue().also { value ->
-                    check(value >= Byte.MIN_VALUE && value <= Byte.MAX_VALUE) {
-                        "$value is out of range of byte"
-                    }
-                }.toByte()
-                Long::class.javaObjectType, Long::class.java -> return toLongValue()
-                BigInteger::class.java -> return BigInteger.valueOf(toLongValue())
-                Double::class.javaObjectType, Double::class.java -> {
-                    checkType(ConfigValueType.NUMBER)
-                    return (unwrapped() as Number).toDouble()
-                }
-                Float::class.javaObjectType, Float::class.java -> {
-                    checkType(ConfigValueType.NUMBER)
-                    return (unwrapped() as Number).toFloat()
-                }
-                BigDecimal::class.java -> {
-                    checkType(ConfigValueType.NUMBER)
-                    return BigDecimal.valueOf((unwrapped() as Number).toDouble())
-                }
-                Char::class.javaObjectType, Char::class.java -> {
-                    val value = toStringValue()
-                    check(value.length == 1) { "fail to cast $value to Char" }
-                    return value[0]
-                }
-                String::class.java -> return toStringValue()
-                OffsetTime::class.java -> return OffsetTime.parse(toStringValue())
-                OffsetDateTime::class.java -> return OffsetDateTime.parse(toStringValue())
-                ZonedDateTime::class.java -> return ZonedDateTime.parse(toStringValue())
-                LocalDate::class.java -> return LocalDate.parse(toStringValue())
-                LocalTime::class.java -> return LocalTime.parse(toStringValue())
-                LocalDateTime::class.java -> return LocalDateTime.parse(toStringValue())
-                Instant::class.java -> return Instant.parse(toStringValue())
-                Duration::class.java -> {
-                    val value = toStringValue()
-                    try {
-                        return Duration.parse(value)
-                    } catch (e: DateTimeParseException) {
-                        return Duration.ofNanos(parseDuration(value))
-                    }
-                }
-                SizeInBytes::class.java -> return SizeInBytes(parseBytes(toStringValue()))
-                else -> {
-                    if (type.isEnumType) {
-                        val valueOfMethod = clazz.getMethod("valueOf", String::class.java)
-                        val name = toStringValue()
-                        try {
-                            return valueOfMethod.invoke(null, name)
-                        } catch (cause: IllegalArgumentException) {
-                            throw IllegalStateException(
-                                    "enum type $clazz has no constant with name $name", cause)
-                        }
-                    } else {
-                        return unsupportedType(clazz)
-                    }
+            } else {
+                return when (clazz) {
+                    Boolean::class.javaObjectType, Boolean::class.java -> toBoolean()
+                    Int::class.javaObjectType, Int::class.java -> toInt()
+                    Short::class.javaObjectType, Short::class.java -> toShort()
+                    Byte::class.javaObjectType, Byte::class.java -> toByte()
+                    Long::class.javaObjectType, Long::class.java -> toLong()
+                    BigInteger::class.java -> toBigInteger()
+                    Double::class.javaObjectType, Double::class.java -> toDouble()
+                    Float::class.javaObjectType, Float::class.java -> toFloat()
+                    BigDecimal::class.java -> toBigDecimal()
+                    Char::class.javaObjectType, Char::class.java -> toChar()
+                    String::class.java -> toText()
+                    OffsetTime::class.java -> toOffsetTime()
+                    OffsetDateTime::class.java -> toOffsetDateTime()
+                    ZonedDateTime::class.java -> toZonedDateTime()
+                    LocalDate::class.java -> toLocalDate()
+                    LocalTime::class.java -> toLocalTime()
+                    LocalDateTime::class.java -> toLocalDateTime()
+                    Instant::class.java -> toInstant()
+                    Duration::class.java -> toDuration()
+                    SizeInBytes::class.java -> toSizeInBytes()
+                    else -> throw UnsupportedTypeException(this, clazz)
                 }
             }
         }
@@ -168,7 +223,7 @@ private fun ConfigValue.toItemValue(type: JavaType): Any {
                     Double::class.java -> (list as List<Double>).toDoubleArray()
                     Float::class.java -> (list as List<Float>).toFloatArray()
                     Char::class.java -> (list as List<Char>).toCharArray()
-                    else -> unsupportedType(clazz)
+                    else -> throw UnsupportedTypeException(this, clazz)
                 }
             }
         }
@@ -179,49 +234,39 @@ private fun ConfigValue.toItemValue(type: JavaType): Any {
                     addAll(toListValue(type.contentType))
                 }
             } else {
-                return unsupportedType(type.rawClass)
+                throw UnsupportedTypeException(this, type.rawClass)
             }
         }
         is MapLikeType -> {
             if (type.isTrueMapType) {
                 if (type.keyType.rawClass == String::class.java) {
-                    checkType(ConfigValueType.OBJECT)
                     @Suppress("UNCHECKED_CAST")
                     return (implOf(type.rawClass).newInstance() as MutableMap<String, Any>).apply {
-                        for ((key, value) in (this@toItemValue as ConfigObject)) {
-                            put(key, value.toItemValue(type.contentType))
-                        }
+                        putAll(this@toValue.toMap().mapValues { (_, value) ->
+                            value.toValue(type.contentType)
+                        })
                     }
                 } else {
-                    throw UnsupportedOperationException(
-                            "cannot load map with ${type.keyType.rawClass} key, only support string key")
+                    throw UnsupportedMapKeyException(type.keyType.rawClass)
                 }
             } else {
-                return unsupportedType(type.rawClass)
+                throw UnsupportedTypeException(this, type.rawClass)
             }
         }
-        else -> return unsupportedType(type.rawClass)
+        else -> throw UnsupportedTypeException(this, type.rawClass)
     }
 }
 
-fun Config.loadHoconFile(file: File) {
-    val config = ConfigFactory.parseFile(file)
-    for (item in this) {
-        val name = item.name
-        if (config.hasPath(name)) {
-            try {
-                rawSet(item, config.getValue(name).toItemValue(item.type))
-            } catch (cause: Throwable) {
-                throw IllegalStateException("catch exception when loading $name", cause)
-            }
-        }
-    }
-}
+fun Source.toListValue(type: JavaType) = toList().map { it.toValue(type) }
 
-private fun unsupportedType(type: Class<*>) {
-    throw UnsupportedOperationException(
-            "cannot load value of type $type")
-}
+private fun implOf(clazz: Class<*>): Class<*> =
+        when (clazz) {
+            List::class.java, MutableList::class.java -> ArrayList::class.java
+            Set::class.java, MutableSet::class.java -> HashSet::class.java
+            SortedSet::class.java -> TreeSet::class.java
+            Map::class.java, MutableMap::class.java -> HashMap::class.java
+            else -> clazz
+        }
 
 /**
  * Parses a duration string. If no units are specified in the string, it is
@@ -231,7 +276,7 @@ private fun unsupportedType(type: Class<*>) {
  *
  * @return duration in nanoseconds
  */
-fun parseDuration(input: String): Long {
+private fun parseDuration(input: String): Long {
     val s = ConfigImplUtil.unicodeTrim(input)
     val originalUnitString = getUnits(s)
     var unitString = originalUnitString
@@ -285,7 +330,7 @@ private fun getUnits(s: String): String {
     var i = s.length - 1
     while (i >= 0) {
         val c = s[i]
-        if (!Character.isLetter(c))
+        if (!c.isLetter())
             break
         i -= 1
     }
@@ -300,7 +345,7 @@ private fun getUnits(s: String): String {
  *
  * @return size in bytes
  */
-fun parseBytes(input: String): Long {
+private fun parseBytes(input: String): Long {
     val s = ConfigImplUtil.unicodeTrim(input)
     val unitString = getUnits(s)
     val numberString = ConfigImplUtil.unicodeTrim(s.substring(0,

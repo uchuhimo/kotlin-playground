@@ -1,7 +1,6 @@
 package com.uchuhimo.konf
 
 import com.uchuhimo.collections.mutableBiMapOf
-import java.util.*
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -53,12 +52,6 @@ interface Config : ConfigGetter {
         operator fun invoke(init: Config.() -> Unit): Config = Config().apply(init)
     }
 }
-
-class RepeatedItemException(message: String) : Exception(message)
-
-class NameConflictException(message: String) : Exception(message)
-
-class InvalidLazySetException(message: String) : Exception(message)
 
 private class ConfigImpl private constructor(
         override val name: String,
@@ -113,10 +106,10 @@ private class ConfigImpl private constructor(
     }
 
     override fun <T : Any> get(item: Item<T>): T = getOrNull(item, errorWhenUnset = true) ?:
-            throw NoSuchElementException("cannot find ${item.name} in config")
+            throw NoSuchItemException(item.name)
 
     override fun <T : Any> get(name: String): T = getOrNull<T>(name, errorWhenUnset = true) ?:
-            throw NoSuchElementException("cannot find $name in config")
+            throw NoSuchItemException(name)
 
     override fun <T : Any> getOrNull(item: Item<T>): T? =
             getOrNull(item, errorWhenUnset = false)
@@ -132,7 +125,7 @@ private class ConfigImpl private constructor(
             return when (valueState) {
                 is ValueState.Unset ->
                     if (errorWhenUnset) {
-                        error("${item.name} is unset")
+                        throw UnsetValueException(item.name)
                     } else {
                         return null
                     }
@@ -214,7 +207,7 @@ private class ConfigImpl private constructor(
                     }
                 }
             } else {
-                throw NoSuchElementException("cannot find ${item.name} in config")
+                throw NoSuchItemException(item.name)
             }
         } else {
             throw ClassCastException(
@@ -233,7 +226,7 @@ private class ConfigImpl private constructor(
             @Suppress("UNCHECKED_CAST")
             set(item as Item<T>, value)
         } else {
-            throw NoSuchElementException("cannot find $name in config")
+            throw NoSuchItemException(name)
         }
     }
 
@@ -249,7 +242,7 @@ private class ConfigImpl private constructor(
                 }
             }
         } else {
-            throw NoSuchElementException("cannot find ${item.name} in config")
+            throw NoSuchItemException(item.name)
         }
     }
 
@@ -259,7 +252,7 @@ private class ConfigImpl private constructor(
             @Suppress("UNCHECKED_CAST")
             lazySet(item as Item<T>, lazyThunk)
         } else {
-            throw NoSuchElementException("cannot find $name in config")
+            throw NoSuchItemException(name)
         }
     }
 
@@ -267,7 +260,7 @@ private class ConfigImpl private constructor(
         if (item in this) {
             lock.write { valueByItem[item] = ValueState.Unset }
         } else {
-            throw NoSuchElementException("cannot find ${item.name} in config")
+            throw NoSuchItemException(item.name)
         }
     }
 
@@ -276,13 +269,13 @@ private class ConfigImpl private constructor(
         if (item != null) {
             unset(item)
         } else {
-            throw NoSuchElementException("cannot find $name in config")
+            throw NoSuchItemException(name)
         }
     }
 
     override fun <T : Any> property(item: Item<T>): ReadWriteProperty<Any?, T> {
         if (!contains(item)) {
-            throw NoSuchElementException("cannot find ${item.name} in config")
+            throw NoSuchItemException(item.name)
         }
         return object : ReadWriteProperty<Any?, T> {
             override fun getValue(thisRef: Any?, property: KProperty<*>): T = get(item)
@@ -294,7 +287,7 @@ private class ConfigImpl private constructor(
 
     override fun <T : Any> property(name: String): ReadWriteProperty<Any?, T> {
         if (!contains(name)) {
-            throw NoSuchElementException("cannot find $name in config")
+            throw NoSuchItemException(name)
         }
         return object : ReadWriteProperty<Any?, T> {
             override fun getValue(thisRef: Any?, property: KProperty<*>): T = get(name)
@@ -381,7 +374,7 @@ private class ConfigImpl private constructor(
                         throw NameConflictException("item $name has been added")
                     }
                 } else {
-                    throw RepeatedItemException("item $name has been added")
+                    throw RepeatedItemException(name)
                 }
             }
             specsInLayer += spec

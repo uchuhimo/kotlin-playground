@@ -3,6 +3,8 @@ package com.uchuhimo.konf
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.isIn
+import com.uchuhimo.konf.source.hocon.HoconProvider
+import com.uchuhimo.konf.source.load
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
@@ -25,7 +27,7 @@ object ConfigLoadSpec : SubjectSpek<Config>({
 
     given("a config") {
         on("load HOCON file") {
-            subject.loadHoconFile(tempFileOf(loadContent))
+            subject.load(HoconProvider.fromFile(tempFileOf(loadContent)))
             it("should contain every value specified in file") {
                 assertThat(subject[ConfigForLoad.booleanItem], equalTo(false))
 
