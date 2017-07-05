@@ -4,7 +4,6 @@ import com.natpryce.hamkrest.absent
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
-import com.natpryce.hamkrest.isIn
 import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
@@ -68,17 +67,7 @@ object ConfigSpek : SubjectSpek<Config>({
         }
         on("iterate items in config") {
             it("should cover all items in config") {
-                for (item in subject) {
-                    assertThat(item, isIn(spec.items))
-                }
-                val items = mutableListOf<Item<*>>()
-                for (item in subject) {
-                    items += item
-                }
-                for (item in spec.items) {
-                    assertThat(item, isIn(items))
-                }
-                assertThat(items.size, equalTo(spec.items.size))
+                assertThat(subject.items.toSet(), equalTo(spec.items.toSet()))
             }
         }
         group("get operation") {
@@ -138,13 +127,11 @@ object ConfigSpek : SubjectSpek<Config>({
                 test("before set, the item should be lazy; after set," +
                         " the item should be no longer lazy, and it contains the specified value") {
                     subject[size] = 1024
-                    assertThat(subject[maxSize],
-                            equalTo(subject[size] * 2))
+                    assertThat(subject[maxSize], equalTo(subject[size] * 2))
                     subject[maxSize] = 0
                     assertThat(subject[maxSize], equalTo(0))
                     subject[size] = 2048
-                    assertThat(subject[maxSize],
-                            !equalTo(subject[size] * 2))
+                    assertThat(subject[maxSize], !equalTo(subject[size] * 2))
                     assertThat(subject[maxSize], equalTo(0))
                 }
             }
@@ -168,31 +155,27 @@ object ConfigSpek : SubjectSpek<Config>({
             }
             on("set with incorrect type of value") {
                 it("should throw ClassCastException") {
-                    assertThat({ subject[size.name] = "1024" },
-                            throws<ClassCastException>())
+                    assertThat({ subject[size.name] = "1024" }, throws<ClassCastException>())
                 }
             }
             on("lazy set with valid item") {
                 subject.lazySet(maxSize) { it[size] * 4 }
                 subject[size] = 1024
                 it("should contain the specified value") {
-                    assertThat(subject[maxSize],
-                            equalTo(subject[size] * 4))
+                    assertThat(subject[maxSize], equalTo(subject[size] * 4))
                 }
             }
             on("lazy set with valid name") {
                 subject.lazySet(maxSize.name) { it[size] * 4 }
                 subject[size] = 1024
                 it("should contain the specified value") {
-                    assertThat(subject[maxSize],
-                            equalTo(subject[size] * 4))
+                    assertThat(subject[maxSize], equalTo(subject[size] * 4))
                 }
             }
             on("lazy set with valid name and invalid value with incompatible type") {
                 subject.lazySet(maxSize.name) { "string" }
                 it("should throw InvalidLazySetException when getting") {
-                    assertThat({ subject[maxSize.name] },
-                            throws<InvalidLazySetException>())
+                    assertThat({ subject[maxSize.name] }, throws<InvalidLazySetException>())
                 }
             }
             on("unset with valid item") {

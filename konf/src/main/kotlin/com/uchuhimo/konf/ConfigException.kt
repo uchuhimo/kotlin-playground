@@ -14,3 +14,6 @@ class InvalidLazySetException(message: String) : ConfigException(message)
 class UnsetValueException(val name: String) : ConfigException("${name} is unset")
 
 class NoSuchItemException(val name: String) : ConfigException("cannot find $name in config")
+
+class SpecFrozenException(val config: Config) :
+        ConfigException("config ${config.name} has children layer, cannot add new spec")

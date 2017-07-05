@@ -9,6 +9,7 @@ import com.typesafe.config.impl.ConfigImplUtil
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.SizeInBytes
+import com.uchuhimo.konf.getUnits
 import java.lang.Class
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -23,8 +24,7 @@ import java.time.Year
 import java.time.YearMonth
 import java.time.ZonedDateTime
 import java.time.format.DateTimeParseException
-import java.util.SortedSet
-import java.util.TreeSet
+import java.util.*
 import java.util.concurrent.TimeUnit
 import kotlin.Byte
 import kotlin.Char
@@ -99,34 +99,35 @@ interface Source {
 
     fun toBigDecimal(): BigDecimal = BigDecimal.valueOf(toDouble())
 
-    fun toOffsetTime(): OffsetTime = OffsetTime.parse(toText())
-
-    fun toOffsetDateTime(): OffsetDateTime = OffsetDateTime.parse(toText())
-
-    fun toZonedDateTime(): ZonedDateTime = ZonedDateTime.parse(toText())
-
-    fun toLocalDate(): LocalDate = LocalDate.parse(toText())
-
-    fun toLocalTime(): LocalTime = LocalTime.parse(toText())
-
-    fun toLocalDateTime(): LocalDateTime = LocalDateTime.parse(toText())
-
-    fun toYear(): Year = Year.parse(toText())
-
-    fun toYearMonth(): YearMonth = YearMonth.parse(toText())
-
-    fun toInstant(): Instant = Instant.parse(toText())
-
-    fun toDuration(): Duration {
-        val value = toText()
+    private inline fun <T> tryParse(block: () -> T): T {
         try {
-            return Duration.parse(value)
-        } catch (e: DateTimeParseException) {
-            return Duration.ofNanos(parseDuration(value))
+            return block()
+        } catch (cause: DateTimeParseException) {
+            throw ParseException("fail to parse \"${toText()}\" as data time", cause)
         }
     }
 
-    fun toSizeInBytes() = SizeInBytes(parseBytes(toText()))
+    fun toOffsetTime(): OffsetTime = tryParse { OffsetTime.parse(toText()) }
+
+    fun toOffsetDateTime(): OffsetDateTime = tryParse { OffsetDateTime.parse(toText()) }
+
+    fun toZonedDateTime(): ZonedDateTime = tryParse { ZonedDateTime.parse(toText()) }
+
+    fun toLocalDate(): LocalDate = tryParse { LocalDate.parse(toText()) }
+
+    fun toLocalTime(): LocalTime = tryParse { LocalTime.parse(toText()) }
+
+    fun toLocalDateTime(): LocalDateTime = tryParse { LocalDateTime.parse(toText()) }
+
+    fun toYear(): Year = tryParse { Year.parse(toText()) }
+
+    fun toYearMonth(): YearMonth = tryParse { YearMonth.parse(toText()) }
+
+    fun toInstant(): Instant = tryParse { Instant.parse(toText()) }
+
+    fun toDuration(): Duration = toText().toDuration()
+
+    fun toSizeInBytes(): SizeInBytes = SizeInBytes.parse(toText())
 }
 
 fun String.toPath(): Path = listOf(this)
@@ -164,7 +165,7 @@ fun Config.load(source: Source) {
     }
 }
 
-fun Source.toValue(type: JavaType): Any {
+private fun Source.toValue(type: JavaType): Any {
     when (type) {
         is SimpleType -> {
             val clazz = type.rawClass
@@ -257,7 +258,7 @@ fun Source.toValue(type: JavaType): Any {
     }
 }
 
-fun Source.toListValue(type: JavaType) = toList().map { it.toValue(type) }
+private fun Source.toListValue(type: JavaType) = toList().map { it.toValue(type) }
 
 private fun implOf(clazz: Class<*>): Class<*> =
         when (clazz) {
@@ -265,8 +266,17 @@ private fun implOf(clazz: Class<*>): Class<*> =
             Set::class.java, MutableSet::class.java -> HashSet::class.java
             SortedSet::class.java -> TreeSet::class.java
             Map::class.java, MutableMap::class.java -> HashMap::class.java
+            SortedMap::class.java -> TreeMap::class.java
             else -> clazz
         }
+
+fun String.toDuration(): Duration {
+    try {
+        return Duration.parse(this)
+    } catch (e: DateTimeParseException) {
+        return Duration.ofNanos(parseDuration(this))
+    }
+}
 
 /**
  * Parses a duration string. If no units are specified in the string, it is
@@ -286,7 +296,7 @@ private fun parseDuration(input: String): Long {
     // this would be caught later anyway, but the error message
     // is more helpful if we check it here.
     if (numberString.isEmpty())
-        error("No number in duration value '$input'")
+        throw ParseException("No number in duration value '$input'")
 
     if (unitString.length > 2 && !unitString.endsWith("s"))
         unitString += "s"
@@ -308,7 +318,7 @@ private fun parseDuration(input: String): Long {
     } else if (unitString == "m" || unitString == "minutes") {
         units = TimeUnit.MINUTES
     } else {
-        error("Could not parse time unit '$originalUnitString' (try ns, us, ms, s, m, h, d)")
+        throw ParseException("Could not parse time unit '$originalUnitString' (try ns, us, ms, s, m, h, d)")
     }
 
     try {
@@ -322,127 +332,6 @@ private fun parseDuration(input: String): Long {
             return (java.lang.Double.parseDouble(numberString) * nanosInUnit).toLong()
         }
     } catch (e: NumberFormatException) {
-        error("Could not parse duration number '$numberString'")
-    }
-}
-
-private fun getUnits(s: String): String {
-    var i = s.length - 1
-    while (i >= 0) {
-        val c = s[i]
-        if (!c.isLetter())
-            break
-        i -= 1
-    }
-    return s.substring(i + 1)
-}
-
-/**
- * Parses a size-in-bytes string. If no units are specified in the string,
- * it is assumed to be in bytes. The returned value is in bytes.
- *
- * @param input the string to parse
- *
- * @return size in bytes
- */
-private fun parseBytes(input: String): Long {
-    val s = ConfigImplUtil.unicodeTrim(input)
-    val unitString = getUnits(s)
-    val numberString = ConfigImplUtil.unicodeTrim(s.substring(0,
-            s.length - unitString.length))
-
-    // this would be caught later anyway, but the error message
-    // is more helpful if we check it here.
-    if (numberString.isEmpty())
-        error("No number in size-in-bytes value '$input'")
-
-    val units = MemoryUnit.parseUnit(unitString) ?:
-            error("Could not parse size-in-bytes unit '$unitString' (try k, K, kB, KiB, kilobytes, kibibytes)")
-
-    try {
-        val result: BigInteger
-        // if the string is purely digits, parse as an integer to avoid
-        // possible precision loss; otherwise as a double.
-        if (numberString.matches("[0-9]+".toRegex())) {
-            result = units.bytes.multiply(BigInteger(numberString))
-        } else {
-            val resultDecimal = BigDecimal(units.bytes).multiply(BigDecimal(numberString))
-            result = resultDecimal.toBigInteger()
-        }
-        if (result.bitLength() < 64)
-            return result.toLong()
-        else
-            error("size-in-bytes value is out of range for a 64-bit long: '$input'")
-    } catch (e: NumberFormatException) {
-        error("Could not parse size-in-bytes number '$numberString'")
-    }
-
-}
-
-private enum class MemoryUnit constructor(
-        internal val prefix: String,
-        internal val powerOf: Int,
-        internal val power: Int
-) {
-    BYTES("", 1024, 0),
-
-    KILOBYTES("kilo", 1000, 1),
-    MEGABYTES("mega", 1000, 2),
-    GIGABYTES("giga", 1000, 3),
-    TERABYTES("tera", 1000, 4),
-    PETABYTES("peta", 1000, 5),
-    EXABYTES("exa", 1000, 6),
-    ZETTABYTES("zetta", 1000, 7),
-    YOTTABYTES("yotta", 1000, 8),
-
-    KIBIBYTES("kibi", 1024, 1),
-    MEBIBYTES("mebi", 1024, 2),
-    GIBIBYTES("gibi", 1024, 3),
-    TEBIBYTES("tebi", 1024, 4),
-    PEBIBYTES("pebi", 1024, 5),
-    EXBIBYTES("exbi", 1024, 6),
-    ZEBIBYTES("zebi", 1024, 7),
-    YOBIBYTES("yobi", 1024, 8);
-
-    internal val bytes: BigInteger = BigInteger.valueOf(powerOf.toLong()).pow(power)
-
-    companion object {
-
-        private fun makeUnitsMap(): Map<String, MemoryUnit> {
-            val map = java.util.HashMap<String, MemoryUnit>()
-            for (unit in MemoryUnit.values()) {
-                map.put(unit.prefix + "byte", unit)
-                map.put(unit.prefix + "bytes", unit)
-                if (unit.prefix.isEmpty()) {
-                    map.put("b", unit)
-                    map.put("B", unit)
-                    map.put("", unit) // no unit specified means bytes
-                } else {
-                    val first = unit.prefix.substring(0, 1)
-                    val firstUpper = first.toUpperCase()
-                    if (unit.powerOf == 1024) {
-                        map.put(first, unit)             // 512m
-                        map.put(firstUpper, unit)        // 512M
-                        map.put(firstUpper + "i", unit)  // 512Mi
-                        map.put(firstUpper + "iB", unit) // 512MiB
-                    } else if (unit.powerOf == 1000) {
-                        if (unit.power == 1) {
-                            map.put(first + "B", unit)      // 512kB
-                        } else {
-                            map.put(firstUpper + "B", unit) // 512MB
-                        }
-                    } else {
-                        throw RuntimeException("broken MemoryUnit enum")
-                    }
-                }
-            }
-            return map
-        }
-
-        private val unitsMap = makeUnitsMap()
-
-        internal fun parseUnit(unit: String): MemoryUnit? {
-            return unitsMap[unit]
-        }
+        throw ParseException("Could not parse duration number '$numberString'")
     }
 }

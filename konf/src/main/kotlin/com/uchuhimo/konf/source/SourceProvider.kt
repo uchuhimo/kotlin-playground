@@ -2,7 +2,6 @@ package com.uchuhimo.konf.source
 
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import java.io.InputStream
 import java.io.Reader
 import java.net.URL
@@ -40,7 +39,7 @@ interface SourceProvider {
         val loader = Thread.currentThread().contextClassLoader
         val e = loader.getResources(resource)
         if (!e.hasMoreElements()) {
-            throw IOException("resource not found on classpath: $resource")
+            throw SourceNotFoundException("resource not found on classpath: $resource")
         }
         val sources = mutableListOf<Source>()
         while (e.hasMoreElements()) {

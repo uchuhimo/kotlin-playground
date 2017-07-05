@@ -1,10 +1,11 @@
-package com.uchuhimo.konf
+package com.uchuhimo.konf.source
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.isIn
-import com.uchuhimo.konf.source.hocon.HoconProvider
-import com.uchuhimo.konf.source.load
+import com.uchuhimo.konf.Config
+import com.uchuhimo.konf.assertTrue
+import com.uchuhimo.konf.source.value.asSource
+import com.uchuhimo.konf.toSizeInBytes
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
@@ -23,14 +24,18 @@ import java.time.YearMonth
 import java.time.ZonedDateTime
 import java.util.*
 
-object ConfigLoadSpec : SubjectSpek<Config>({
+object SourceLoadSpec : SubjectSpek<Config>({
 
-    subject { Config { addSpec(ConfigForLoad) } }
+    subject {
+        Config {
+            addSpec(ConfigForLoad)
+            load(loadContent.asSource())
+        }
+    }
 
-    given("a config") {
-        on("load HOCON file") {
-            subject.load(HoconProvider.fromFile(tempFileOf(loadContent)))
-            it("should contain every value specified in file") {
+    given("a source") {
+        on("load the source into config") {
+            it("should contain every value specified in the source") {
                 assertThat(subject[ConfigForLoad.booleanItem], equalTo(false))
 
                 assertThat(subject[ConfigForLoad.intItem], equalTo(1))
@@ -103,92 +108,77 @@ object ConfigLoadSpec : SubjectSpek<Config>({
                         subject[ConfigForLoad.enumArrayItem],
                         arrayOf(EnumForLoad.LABEL1, EnumForLoad.LABEL2, EnumForLoad.LABEL3)))
 
-                assertThat(subject[ConfigForLoad.listItem].size, equalTo(3))
-                assertThat(subject[ConfigForLoad.listItem][0], equalTo(1))
-                assertThat(subject[ConfigForLoad.listItem][1], equalTo(2))
-                assertThat(subject[ConfigForLoad.listItem][2], equalTo(3))
+                assertThat(subject[ConfigForLoad.listItem], equalTo(listOf(1, 2, 3)))
 
                 assertTrue(Arrays.equals(
                         subject[ConfigForLoad.mutableListItem].toTypedArray(),
                         arrayOf(1, 2, 3)))
 
-                assertThat(subject[ConfigForLoad.listOfListItem][0][0], equalTo(1))
-                assertThat(subject[ConfigForLoad.listOfListItem][0][1], equalTo(2))
-                assertThat(subject[ConfigForLoad.listOfListItem][1][0], equalTo(3))
-                assertThat(subject[ConfigForLoad.listOfListItem][1][1], equalTo(4))
+                assertThat(subject[ConfigForLoad.listOfListItem],
+                        equalTo(listOf(listOf(1, 2), listOf(3, 4))))
 
-                assertThat(subject[ConfigForLoad.setItem].size, equalTo(2))
-                assertThat(1, isIn(subject[ConfigForLoad.setItem]))
-                assertThat(2, isIn(subject[ConfigForLoad.setItem]))
+                assertThat(subject[ConfigForLoad.setItem], equalTo(setOf(1, 2)))
 
-                assertThat(subject[ConfigForLoad.sortedSetItem].size, equalTo(3))
-                assertThat(subject[ConfigForLoad.sortedSetItem].first(), equalTo(1))
-                assertThat(subject[ConfigForLoad.sortedSetItem].last(), equalTo(3))
+                assertThat(subject[ConfigForLoad.sortedSetItem],
+                        equalTo<SortedSet<Int>>(sortedSetOf(1, 2, 3)))
 
-                assertThat(subject[ConfigForLoad.mapItem].size, equalTo(3))
-                assertThat(subject[ConfigForLoad.mapItem]["a"], equalTo(1))
-                assertThat(subject[ConfigForLoad.mapItem]["b"], equalTo(2))
-                assertThat(subject[ConfigForLoad.mapItem]["c"], equalTo(3))
+                assertThat(subject[ConfigForLoad.mapItem],
+                        equalTo(mapOf("a" to 1, "b" to 2, "c" to 3)))
             }
         }
     }
 })
 
-val loadContent = """
-level1 {
-    level2 {
-        boolean = false
+private val loadContent = mapOf<String, Any>(
+        "boolean" to false,
 
-        int = 1
-        short = 2
-        byte = 3
-        bigInteger = 4
-        long = 4
+        "int" to 1,
+        "short" to 2.toShort(),
+        "byte" to 3.toByte(),
+        "bigInteger" to BigInteger.valueOf(4),
+        "long" to 4L,
 
-        double = 1.5
-        float = -1.5
-        bigDecimal = 1.5
+        "double" to 1.5,
+        "float" to -1.5f,
+        "bigDecimal" to BigDecimal.valueOf(1.5),
 
-        char = " "
+        "char" to ' ',
 
-        string = string
-        offsetTime = "10:15:30+01:00"
-        offsetDateTime = "2007-12-03T10:15:30+01:00"
-        zonedDateTime = "2007-12-03T10:15:30+01:00[Europe/Paris]"
-        localDate = 2007-12-03
-        localTime = "10:15:30"
-        localDateTime = "2007-12-03T10:15:30"
-        year = "2007"
-        yearMonth = 2007-12
-        instant = "2007-12-03T10:15:30.00Z"
-        duration = P2DT3H4M
-        simpleDuration = 200millis
-        size = 10k
+        "string" to "string",
+        "offsetTime" to OffsetTime.parse("10:15:30+01:00"),
+        "offsetDateTime" to OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+        "zonedDateTime" to ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"),
+        "localDate" to LocalDate.parse("2007-12-03"),
+        "localTime" to LocalTime.parse("10:15:30"),
+        "localDateTime" to LocalDateTime.parse("2007-12-03T10:15:30"),
+        "year" to Year.parse("2007"),
+        "yearMonth" to YearMonth.parse("2007-12"),
+        "instant" to Instant.parse("2007-12-03T10:15:30.00Z"),
+        "duration" to "P2DT3H4M".toDuration(),
+        "simpleDuration" to "200millis".toDuration(),
+        "size" to "10k".toSizeInBytes(),
 
-        enum = LABEL2
+        "enum" to "LABEL2",
 
-        array {
-            boolean = [true, false]
-            int = [1, 2, 3]
-            long = [4, 5, 6]
-            double = [-1, 0.0, 1]
-            char = [a, b, c]
+        "array.boolean" to listOf(true, false),
+        "array.int" to listOf(1, 2, 3),
+        "array.long" to listOf(4L, 5L, 6L),
+        "array.double" to listOf(-1.0, 0.0, 1.0),
+        "array.char" to listOf('a', 'b', 'c'),
 
-            object {
-                boolean = [true, false]
-                int = [1, 2, 3]
-                string = [one, two, three]
-                enum = [LABEL1, LABEL2, LABEL3]
-            }
-        }
+        "array.object.boolean" to listOf(true, false),
+        "array.object.int" to listOf(1, 2, 3),
+        "array.object.string" to listOf("one", "two", "three"),
+        "array.object.enum" to listOf("LABEL1", "LABEL2", "LABEL3"),
 
-        list = [1, 2, 3]
-        mutableList = [1, 2, 3]
-        listOfList = [[1, 2], [3, 4]]
-        set = [1, 2, 1]
-        sortedSet = [2, 1, 1, 3]
+        "list" to listOf(1, 2, 3),
+        "mutableList" to listOf(1, 2, 3),
+        "listOfList" to listOf(listOf(1, 2), listOf(3, 4)),
+        "set" to listOf(1, 2, 1),
+        "sortedSet" to listOf(2, 1, 1, 3),
 
-        map = { a = 1, b = 2, c = 3 }
-    }
-}
-"""
+        "map" to mapOf(
+                "a" to 1,
+                "b" to 2,
+                "c" to 3)
+).mapKeys { (key, _) -> "level1.level2.$key" }

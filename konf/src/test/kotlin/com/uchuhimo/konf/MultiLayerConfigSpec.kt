@@ -2,8 +2,6 @@ package com.uchuhimo.konf
 
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
-import com.natpryce.hamkrest.isIn
-import com.natpryce.hamkrest.or
 import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.dsl.it
 import org.jetbrains.spek.api.dsl.on
@@ -65,10 +63,8 @@ object MultiLayerConfigSpec : SubjectSpek<Config>({
             val spec = object : ConfigSpec(NetworkBuffer.prefix) {
                 val minSize = optional("minSize", 1)
             }
-            it("should throw UnsupportedOperationException") {
-                assertThat(
-                        { subject.parent!!.addSpec(spec) },
-                        throws<UnsupportedOperationException>())
+            it("should throw SpecFrozenException") {
+                assertThat({ subject.parent!!.addSpec(spec) }, throws<SpecFrozenException>())
             }
         }
         on("iterate items in config after adding spec") {
@@ -77,20 +73,8 @@ object MultiLayerConfigSpec : SubjectSpek<Config>({
             }
             subject.addSpec(spec)
             it("should cover all items in config") {
-                for (item in subject) {
-                    assertThat(item, isIn(NetworkBuffer.items) or isIn(spec.items))
-                }
-                val items = mutableListOf<Item<*>>()
-                for (item in subject) {
-                    items += item
-                }
-                for (item in NetworkBuffer.items) {
-                    assertThat(item, isIn(items))
-                }
-                for (item in spec.items) {
-                    assertThat(item, isIn(items))
-                }
-                assertThat(items.size, equalTo(NetworkBuffer.items.size + spec.items.size))
+                assertThat(subject.iterator().asSequence().toSet(),
+                        equalTo((NetworkBuffer.items + spec.items).toSet()))
             }
         }
     }

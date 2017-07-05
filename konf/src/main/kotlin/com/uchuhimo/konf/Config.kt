@@ -356,8 +356,7 @@ private class ConfigImpl private constructor(
     override fun addSpec(spec: ConfigSpec) {
         lock.write {
             if (hasChildren) {
-                throw UnsupportedOperationException(
-                        "this config has children layer, cannot add new spec")
+                throw SpecFrozenException(this)
             }
             spec.items.forEach { item ->
                 val name = item.name

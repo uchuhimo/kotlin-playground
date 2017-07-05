@@ -1,5 +1,7 @@
-package com.uchuhimo.konf
+package com.uchuhimo.konf.source
 
+import com.uchuhimo.konf.ConfigSpec
+import com.uchuhimo.konf.SizeInBytes
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Duration
