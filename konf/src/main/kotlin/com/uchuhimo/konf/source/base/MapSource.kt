@@ -8,29 +8,21 @@ open class MapSource(val map: Map<String, Any>) : ValueSource(map) {
 
     override fun contains(path: Path): Boolean {
         if (path.isEmpty()) {
-            return false
+            return true
         } else {
             val key = path.first()
             val rest = path.drop(1)
-            if (rest.isEmpty()) {
-                return map.contains(key)
-            } else {
-                return map[key]?.castToSource()?.contains(rest) ?: false
-            }
+            return map[key]?.castToSource()?.contains(rest) ?: false
         }
     }
 
     override fun getOrNull(path: Path): Source? {
         if (path.isEmpty()) {
-            return null
+            return this
         } else {
             val key = path.first()
             val rest = path.drop(1)
-            if (rest.isEmpty()) {
-                return map[key]?.castToSource()
-            } else {
-                return map[key]?.castToSource()?.getOrNull(rest)
-            }
+            return map[key]?.castToSource()?.getOrNull(rest)
         }
     }
 

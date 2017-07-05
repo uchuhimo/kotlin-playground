@@ -24,10 +24,14 @@ import java.util.*
 open class ValueSource(val value: Any) : Source {
     override val description: String get() = value.toString()
 
-    override fun contains(path: Path): Boolean = false
+    override fun contains(path: Path): Boolean = path.isEmpty()
 
     override fun getOrNull(path: Path): Source? {
-        throw NoSuchPathException(this, path)
+        if (path.isEmpty()) {
+            return this
+        } else {
+            throw NoSuchPathException(this, path)
+        }
     }
 
     protected inline fun <reified T> cast(): T {

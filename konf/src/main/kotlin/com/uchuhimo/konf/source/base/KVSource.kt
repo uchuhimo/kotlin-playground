@@ -9,9 +9,9 @@ class KVSource(val map: Map<String, Any>) : ValueSource(map) {
 
     override fun contains(path: Path): Boolean = map.contains(path.name)
 
-    override fun getOrNull(path: Path): Source? = map[path.name]?.asSource()
+    override fun getOrNull(path: Path): Source? = map[path.name]?.castToSource()
 
-    override fun toMap(): Map<String, Source> = map.mapValues { (_, value) -> value.asSource() }
+    override fun toMap(): Map<String, Source> = map.mapValues { (_, value) -> value.castToSource() }
 }
 
 fun Map<String, Any>.asKVSource() = KVSource(this)
