@@ -1,4 +1,4 @@
-package com.uchuhimo.konf.source.yaml
+package com.uchuhimo.konf.source.toml
 
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.source.ConfigForLoad
@@ -7,15 +7,14 @@ import com.uchuhimo.konf.source.load
 import org.jetbrains.spek.subject.SubjectSpek
 import org.jetbrains.spek.subject.itBehavesLike
 
-object YamlSourceLoadSpec : SubjectSpek<Config>({
+object TomlSourceLoadSpec : SubjectSpek<Config>({
 
     subject {
         Config {
             addSpec(ConfigForLoad)
-            load(YamlProvider.fromResource("source/source.yml"))
+            load(TomlProvider.fromResource("source/source.toml"))
         }
     }
 
     itBehavesLike(SourceLoadSpec)
 })
-

@@ -20,6 +20,8 @@ class HoconSource(val config: Config) : Source {
         }
     }
 
+    override fun toInt(): Int = unsupported()
+
     override fun toList(): List<Source> = unsupported()
 
     override fun toMap(): Map<String, Source> = unsupported()

@@ -69,6 +69,7 @@ object ConfigForLoad : ConfigSpec("level1.level2") {
 
     val mapItem = required<Map<String, Int>>("map")
     val sortedMapItem = required<SortedMap<String, Int>>("sortedMap")
+    val listOfMapItem = required<List<Map<String, Int>>>("listOfMap")
 
     val nestedItem = required<Array<List<Set<Map<String, Int>>>>>("nested")
 }

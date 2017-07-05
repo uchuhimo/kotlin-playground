@@ -4,7 +4,7 @@ import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.assertTrue
-import com.uchuhimo.konf.source.value.asSource
+import com.uchuhimo.konf.source.base.asKVSource
 import com.uchuhimo.konf.toSizeInBytes
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
@@ -21,7 +21,6 @@ import java.time.OffsetDateTime
 import java.time.OffsetTime
 import java.time.Year
 import java.time.YearMonth
-import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -30,7 +29,7 @@ object SourceLoadSpec : SubjectSpek<Config>({
     subject {
         Config {
             addSpec(ConfigForLoad)
-            load(loadContent.asSource())
+            load(loadContent.asKVSource())
         }
     }
 
@@ -65,7 +64,7 @@ object SourceLoadSpec : SubjectSpek<Config>({
                 assertThat(subject[ConfigForLoad.localDateTimeItem],
                         equalTo(LocalDateTime.parse("2007-12-03T10:15:30")))
                 assertThat(subject[ConfigForLoad.dateItem],
-                        equalTo(Date.from(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC))))
+                        equalTo(Date.from(Instant.parse("2007-12-03T10:15:30Z"))))
                 assertThat(subject[ConfigForLoad.yearItem],
                         equalTo(Year.parse("2007")))
                 assertThat(subject[ConfigForLoad.yearMonthItem],
@@ -131,6 +130,8 @@ object SourceLoadSpec : SubjectSpek<Config>({
                         equalTo(sortedMapOf("a" to 1, "b" to 2, "c" to 3)))
                 assertThat(subject[ConfigForLoad.sortedMapItem].firstKey(), equalTo("a"))
                 assertThat(subject[ConfigForLoad.sortedMapItem].lastKey(), equalTo("c"))
+                assertThat(subject[ConfigForLoad.listOfMapItem],
+                        equalTo(listOf(mapOf("a" to 1, "b" to 2), mapOf("a" to 3, "b" to 4))))
 
                 assertTrue(Arrays.equals(subject[ConfigForLoad.nestedItem],
                         arrayOf(listOf(setOf(mapOf("a" to 1))))))
@@ -161,7 +162,7 @@ private val loadContent = mapOf<String, Any>(
         "localDate" to LocalDate.parse("2007-12-03"),
         "localTime" to LocalTime.parse("10:15:30"),
         "localDateTime" to LocalDateTime.parse("2007-12-03T10:15:30"),
-        "date" to Date.from(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC)),
+        "date" to Date.from(Instant.parse("2007-12-03T10:15:30Z")),
         "year" to Year.parse("2007"),
         "yearMonth" to YearMonth.parse("2007-12"),
         "instant" to Instant.parse("2007-12-03T10:15:30.00Z"),
@@ -196,6 +197,10 @@ private val loadContent = mapOf<String, Any>(
                 "c" to 3,
                 "b" to 2,
                 "a" to 1
+        ),
+        "listOfMap" to listOf(
+                mapOf("a" to 1, "b" to 2),
+                mapOf("a" to 3, "b" to 4)
         ),
 
         "nested" to listOf(listOf(listOf(mapOf("a" to 1))))

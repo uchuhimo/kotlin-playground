@@ -64,15 +64,11 @@ interface Source {
 
     fun toBoolean(): Boolean
 
-    fun toLong(): Long
+    fun toLong(): Long = toInt().toLong()
 
     fun toDouble(): Double
 
-    fun toInt(): Int = toLong().also { value ->
-        if (value < Int.MIN_VALUE || value > Int.MAX_VALUE) {
-            throw ParseException("$value is out of range of Int")
-        }
-    }.toInt()
+    fun toInt(): Int
 
     fun toShort(): Short = toInt().also { value ->
         if (value < Short.MIN_VALUE || value > Short.MAX_VALUE) {
@@ -122,12 +118,16 @@ interface Source {
 
     fun toDate(): Date {
         try {
-            return Date.from(toInstant())
+            return Date.from(tryParse { Instant.parse(toText()) })
         } catch (e: ParseException) {
             try {
-                return Date.from(toLocalDateTime().toInstant(ZoneOffset.UTC))
+                return Date.from(tryParse {
+                    LocalDateTime.parse(toText())
+                }.toInstant(ZoneOffset.UTC))
             } catch (e: ParseException) {
-                return Date.from(toLocalDate().atStartOfDay().toInstant(ZoneOffset.UTC))
+                return Date.from(tryParse {
+                    LocalDate.parse(toText())
+                }.atStartOfDay().toInstant(ZoneOffset.UTC))
             }
         }
     }
