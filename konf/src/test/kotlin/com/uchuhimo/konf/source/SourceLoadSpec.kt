@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 import java.time.OffsetTime
 import java.time.Year
 import java.time.YearMonth
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.*
 
@@ -61,17 +62,19 @@ object SourceLoadSpec : SubjectSpek<Config>({
                         equalTo(LocalDate.parse("2007-12-03")))
                 assertThat(subject[ConfigForLoad.localTimeItem],
                         equalTo(LocalTime.parse("10:15:30")))
-                assertThat(subject[ConfigForLoad.localDateTime],
+                assertThat(subject[ConfigForLoad.localDateTimeItem],
                         equalTo(LocalDateTime.parse("2007-12-03T10:15:30")))
-                assertThat(subject[ConfigForLoad.year],
+                assertThat(subject[ConfigForLoad.dateItem],
+                        equalTo(Date.from(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC))))
+                assertThat(subject[ConfigForLoad.yearItem],
                         equalTo(Year.parse("2007")))
-                assertThat(subject[ConfigForLoad.yearMonth],
+                assertThat(subject[ConfigForLoad.yearMonthItem],
                         equalTo(YearMonth.parse("2007-12")))
-                assertThat(subject[ConfigForLoad.instantTime],
+                assertThat(subject[ConfigForLoad.instantItem],
                         equalTo(Instant.parse("2007-12-03T10:15:30.00Z")))
-                assertThat(subject[ConfigForLoad.durationTime],
+                assertThat(subject[ConfigForLoad.durationItem],
                         equalTo(Duration.parse("P2DT3H4M")))
-                assertThat(subject[ConfigForLoad.simpleDurationTime],
+                assertThat(subject[ConfigForLoad.simpleDurationItem],
                         equalTo(Duration.ofMillis(200)))
                 assertThat(subject[ConfigForLoad.sizeItem].bytes, equalTo(10240L))
 
@@ -124,6 +127,13 @@ object SourceLoadSpec : SubjectSpek<Config>({
 
                 assertThat(subject[ConfigForLoad.mapItem],
                         equalTo(mapOf("a" to 1, "b" to 2, "c" to 3)))
+                assertThat(subject[ConfigForLoad.sortedMapItem],
+                        equalTo(sortedMapOf("a" to 1, "b" to 2, "c" to 3)))
+                assertThat(subject[ConfigForLoad.sortedMapItem].firstKey(), equalTo("a"))
+                assertThat(subject[ConfigForLoad.sortedMapItem].lastKey(), equalTo("c"))
+
+                assertTrue(Arrays.equals(subject[ConfigForLoad.nestedItem],
+                        arrayOf(listOf(setOf(mapOf("a" to 1))))))
             }
         }
     }
@@ -151,6 +161,7 @@ private val loadContent = mapOf<String, Any>(
         "localDate" to LocalDate.parse("2007-12-03"),
         "localTime" to LocalTime.parse("10:15:30"),
         "localDateTime" to LocalDateTime.parse("2007-12-03T10:15:30"),
+        "date" to Date.from(LocalDateTime.parse("2007-12-03T10:15:30").toInstant(ZoneOffset.UTC)),
         "year" to Year.parse("2007"),
         "yearMonth" to YearMonth.parse("2007-12"),
         "instant" to Instant.parse("2007-12-03T10:15:30.00Z"),
@@ -180,5 +191,12 @@ private val loadContent = mapOf<String, Any>(
         "map" to mapOf(
                 "a" to 1,
                 "b" to 2,
-                "c" to 3)
+                "c" to 3),
+        "sortedMap" to mapOf(
+                "c" to 3,
+                "b" to 2,
+                "a" to 1
+        ),
+
+        "nested" to listOf(listOf(listOf(mapOf("a" to 1))))
 ).mapKeys { (key, _) -> "level1.level2.$key" }

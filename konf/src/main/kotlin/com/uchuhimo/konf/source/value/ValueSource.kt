@@ -2,6 +2,7 @@ package com.uchuhimo.konf.source.value
 
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.SizeInBytes
+import com.uchuhimo.konf.source.NoSuchPathException
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.WrongTypeException
 import com.uchuhimo.konf.unsupported
@@ -17,13 +18,16 @@ import java.time.OffsetTime
 import java.time.Year
 import java.time.YearMonth
 import java.time.ZonedDateTime
+import java.util.*
 
 open class ValueSource(val value: Any) : Source {
     override val description: String get() = value.toString()
 
-    override fun contains(path: Path): Boolean = unsupported()
+    override fun contains(path: Path): Boolean = false
 
-    override fun getOrNull(path: Path): Source? = unsupported()
+    override fun getOrNull(path: Path): Source? {
+        throw NoSuchPathException(this, path)
+    }
 
     private inline fun <reified T> cast(): T {
         if (T::class.java.isInstance(value)) {
@@ -70,6 +74,8 @@ open class ValueSource(val value: Any) : Source {
     override fun toLocalTime(): LocalTime = cast()
 
     override fun toLocalDateTime(): LocalDateTime = cast()
+
+    override fun toDate(): Date = cast()
 
     override fun toYear(): Year = cast()
 

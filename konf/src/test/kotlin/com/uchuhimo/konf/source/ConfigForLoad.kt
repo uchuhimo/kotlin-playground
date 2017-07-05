@@ -37,12 +37,13 @@ object ConfigForLoad : ConfigSpec("level1.level2") {
     val zonedDateTimeItem = required<ZonedDateTime>("zonedDateTime")
     val localDateItem = required<LocalDate>("localDate")
     val localTimeItem = required<LocalTime>("localTime")
-    val localDateTime = required<LocalDateTime>("localDateTime")
-    val year = required<Year>("year")
-    val yearMonth = required<YearMonth>("yearMonth")
-    val instantTime = required<Instant>("instant")
-    val durationTime = required<Duration>("duration")
-    val simpleDurationTime = required<Duration>("simpleDuration")
+    val localDateTimeItem = required<LocalDateTime>("localDateTime")
+    val dateItem = required<Date>("date")
+    val yearItem = required<Year>("year")
+    val yearMonthItem = required<YearMonth>("yearMonth")
+    val instantItem = required<Instant>("instant")
+    val durationItem = required<Duration>("duration")
+    val simpleDurationItem = required<Duration>("simpleDuration")
     val sizeItem = required<SizeInBytes>("size")
 
     val enumItem = required<EnumForLoad>("enum")
@@ -67,6 +68,9 @@ object ConfigForLoad : ConfigSpec("level1.level2") {
     val sortedSetItem = required<SortedSet<Int>>("sortedSet")
 
     val mapItem = required<Map<String, Int>>("map")
+    val sortedMapItem = required<SortedMap<String, Int>>("sortedMap")
+
+    val nestedItem = required<Array<List<Set<Map<String, Int>>>>>("nested")
 }
 
 enum class EnumForLoad {

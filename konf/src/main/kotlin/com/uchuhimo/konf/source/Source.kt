@@ -22,6 +22,7 @@ import java.time.OffsetDateTime
 import java.time.OffsetTime
 import java.time.Year
 import java.time.YearMonth
+import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeParseException
 import java.util.*
@@ -119,6 +120,18 @@ interface Source {
 
     fun toLocalDateTime(): LocalDateTime = tryParse { LocalDateTime.parse(toText()) }
 
+    fun toDate(): Date {
+        try {
+            return Date.from(toInstant())
+        } catch (e: ParseException) {
+            try {
+                return Date.from(toLocalDateTime().toInstant(ZoneOffset.UTC))
+            } catch (e: ParseException) {
+                return Date.from(toLocalDate().atStartOfDay().toInstant(ZoneOffset.UTC))
+            }
+        }
+    }
+
     fun toYear(): Year = tryParse { Year.parse(toText()) }
 
     fun toYearMonth(): YearMonth = tryParse { YearMonth.parse(toText()) }
@@ -197,6 +210,7 @@ private fun Source.toValue(type: JavaType): Any {
                     LocalDate::class.java -> toLocalDate()
                     LocalTime::class.java -> toLocalTime()
                     LocalDateTime::class.java -> toLocalDateTime()
+                    Date::class.java -> toDate()
                     Year::class.java -> toYear()
                     YearMonth::class.java -> toYearMonth()
                     Instant::class.java -> toInstant()

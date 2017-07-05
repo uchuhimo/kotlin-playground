@@ -43,6 +43,7 @@ level1 {
         localDate = 2007-12-03
         localTime = "10:15:30"
         localDateTime = "2007-12-03T10:15:30"
+        date = "2007-12-03T10:15:30"
         year = "2007"
         yearMonth = 2007-12
         instant = "2007-12-03T10:15:30.00Z"
@@ -74,6 +75,9 @@ level1 {
         sortedSet = [2, 1, 1, 3]
 
         map = { a = 1, b = 2, c = 3 }
+        sortedMap = { c = 3, b = 2, a = 1 }
+
+        nested = [[[{ a = 1 }]]]
     }
 }
 """
