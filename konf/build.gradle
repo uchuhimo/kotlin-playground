@@ -13,3 +13,9 @@ dependencies {
     testCompile "com.sparkjava:spark-core:2.6.0"
     testCompile "org.slf4j:slf4j-simple:1.7.25"
 }
+
+afterEvaluate {
+    junitPlatformTest {
+        environment "source.test.type", "env"
+    }
+}

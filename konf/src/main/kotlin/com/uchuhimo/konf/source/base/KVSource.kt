@@ -4,7 +4,7 @@ import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.name
 import com.uchuhimo.konf.source.Source
 
-class KVSource(val map: Map<String, Any>) : ValueSource(map) {
+open class KVSource(val map: Map<String, Any>) : ValueSource(map) {
     override val description: String get() = map.toString()
 
     override fun contains(path: Path): Boolean = map.contains(path.name)
