@@ -2,14 +2,35 @@ package com.uchuhimo.konf.source.base
 
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.name
+import com.uchuhimo.konf.notEmptyOr
 import com.uchuhimo.konf.source.NoSuchPathException
 import com.uchuhimo.konf.source.ParseException
 import com.uchuhimo.konf.source.Source
+import com.uchuhimo.konf.source.toDescription
 import com.uchuhimo.konf.source.toPath
 
-open class FlatSource(val map: Map<String, String>, val prefix: String = "") : Source {
-    override val description: String
-        get() = "flat map"
+open class FlatSource(
+        val map: Map<String, String>,
+        val prefix: String = "",
+        type: String = "",
+        context: Map<String, String> = mapOf()
+) : Source {
+    val _info = mutableMapOf(
+            "type" to type.notEmptyOr("flat"))
+
+    override val info: Map<String, String> get() = _info
+
+    override fun addInfo(name: String, value: String) {
+        _info.put(name, value)
+    }
+
+    val _context: MutableMap<String, String> = context.toMutableMap()
+
+    override val context: Map<String, String> get() = _context
+
+    override fun addContext(name: String, value: String) {
+        _context.put(name, value)
+    }
 
     override fun contains(path: Path): Boolean {
         if (path.isEmpty()) {
@@ -37,9 +58,9 @@ open class FlatSource(val map: Map<String, String>, val prefix: String = "") : S
         } else {
             if (contains(path)) {
                 if (prefix.isEmpty()) {
-                    return FlatSource(map, path.name)
+                    return FlatSource(map, path.name, context = context)
                 } else {
-                    return FlatSource(map, "$prefix.${path.name}")
+                    return FlatSource(map, "$prefix.${path.name}", context = context)
                 }
             } else {
                 return null
@@ -55,7 +76,9 @@ open class FlatSource(val map: Map<String, String>, val prefix: String = "") : S
             getOrNull(it.toString().toPath())
         }.takeWhile {
             it != null
-        }.filterNotNull().toList()
+        }.filterNotNull().toList().map {
+            it.apply { addInfo("inList", this@FlatSource.info.toDescription()) }
+        }
     }
 
     override fun toMap(): Map<String, Source> {
@@ -68,7 +91,9 @@ open class FlatSource(val map: Map<String, String>, val prefix: String = "") : S
         }.map {
             it.takeWhile { it != '.' }
         }.toSet().associate {
-            it to FlatSource(map, "$prefix.$it")
+            it to FlatSource(map, "$prefix.$it", context = context).apply {
+                addInfo("inMap", this@FlatSource.info.toDescription())
+            }
         }
     }
 

@@ -4,8 +4,11 @@ import com.uchuhimo.konf.source.ParseException
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.base.ValueSource
 
-class TomlValueSource(value: Any) : ValueSource(value) {
-    override fun Any.castToSource(): Source = asTomlSource()
+class TomlValueSource(
+        value: Any,
+        context: Map<String, String> = mapOf()
+) : ValueSource(value, "TOML-value", context) {
+    override fun Any.castToSource(context: Map<String, String>): Source = asTomlSource(context)
 
     override fun toLong(): Long = cast()
 
@@ -16,15 +19,15 @@ class TomlValueSource(value: Any) : ValueSource(value) {
     }.toInt()
 }
 
-fun Any.asTomlSource(): Source =
+fun Any.asTomlSource(context: Map<String, String> = mapOf()): Source =
         if (this is Source) {
             this
         } else if (this is Map<*, *>) {
             try {
-                TomlMapSource(this as Map<String, Any>)
+                TomlMapSource(this as Map<String, Any>, context)
             } catch (e: ClassCastException) {
-                TomlValueSource(this)
+                TomlValueSource(this, context)
             }
         } else {
-            TomlValueSource(this)
+            TomlValueSource(this, context)
         }

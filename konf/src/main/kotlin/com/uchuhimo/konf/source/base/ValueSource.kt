@@ -2,9 +2,11 @@ package com.uchuhimo.konf.source.base
 
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.SizeInBytes
+import com.uchuhimo.konf.notEmptyOr
 import com.uchuhimo.konf.source.NoSuchPathException
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.WrongTypeException
+import com.uchuhimo.konf.source.toDescription
 import com.uchuhimo.konf.unsupported
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -21,8 +23,27 @@ import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.util.*
 
-open class ValueSource(val value: Any) : Source {
-    override val description: String get() = value.toString()
+open class ValueSource(
+        val value: Any,
+        type: String = "",
+        context: Map<String, String> = mapOf()
+) : Source {
+    val _info = mutableMapOf(
+            "type" to type.notEmptyOr("value"))
+
+    override val info: Map<String, String> get() = _info
+
+    override fun addInfo(name: String, value: String) {
+        _info.put(name, value)
+    }
+
+    val _context: MutableMap<String, String> = context.toMutableMap()
+
+    override val context: Map<String, String> get() = _context
+
+    override fun addContext(name: String, value: String) {
+        _context.put(name, value)
+    }
 
     override fun contains(path: Path): Boolean = path.isEmpty()
 
@@ -42,9 +63,11 @@ open class ValueSource(val value: Any) : Source {
         }
     }
 
-    open fun Any.castToSource(): Source = asSource()
+    open fun Any.castToSource(context: Map<String, String>): Source = asSource(context = context)
 
-    override fun toList(): List<Source> = cast<List<Any>>().map { it.castToSource() }
+    override fun toList(): List<Source> = cast<List<Any>>().map {
+        it.castToSource(context).apply { addInfo("inList", this@ValueSource.info.toDescription()) }
+    }
 
     override fun toMap(): Map<String, Source> = unsupported()
 
@@ -227,15 +250,15 @@ open class ValueSource(val value: Any) : Source {
     }
 }
 
-fun Any.asSource(): Source =
+fun Any.asSource(type: String = "", context: Map<String, String> = mapOf()): Source =
         if (this is Source) {
             this
         } else if (this is Map<*, *>) {
             try {
-                MapSource(this as Map<String, Any>)
+                MapSource(this as Map<String, Any>, type, context)
             } catch (e: ClassCastException) {
-                ValueSource(this)
+                ValueSource(this, type, context)
             }
         } else {
-            ValueSource(this)
+            ValueSource(this, type, context)
         }

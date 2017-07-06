@@ -5,11 +5,29 @@ import com.fasterxml.jackson.databind.node.JsonNodeType
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.WrongTypeException
+import com.uchuhimo.konf.source.toDescription
 import java.math.BigDecimal
 import java.math.BigInteger
 
-class JsonSource(val node: JsonNode) : Source {
-    override val description: String get() = "JSON"
+class JsonSource(
+        val node: JsonNode,
+        context: Map<String, String> = mapOf()
+) : Source {
+    val _info = mutableMapOf("type" to "JSON")
+
+    override val info: Map<String, String> get() = _info
+
+    override fun addInfo(name: String, value: String) {
+        _info.put(name, value)
+    }
+
+    val _context: MutableMap<String, String> = context.toMutableMap()
+
+    override val context: Map<String, String> get() = _context
+
+    override fun addContext(name: String, value: String) {
+        _context.put(name, value)
+    }
 
     override fun contains(path: Path): Boolean {
         if (path.isEmpty()) {
@@ -19,7 +37,7 @@ class JsonSource(val node: JsonNode) : Source {
             val rest = path.drop(1)
             val childNode = node[key]
             if (childNode != null) {
-                return JsonSource(childNode).contains(rest)
+                return JsonSource(childNode, context).contains(rest)
             } else {
                 return false
             }
@@ -34,7 +52,7 @@ class JsonSource(val node: JsonNode) : Source {
             val rest = path.drop(1)
             val childNode = node[key]
             if (childNode != null) {
-                return JsonSource(childNode).getOrNull(rest)
+                return JsonSource(childNode, context).getOrNull(rest)
             } else {
                 return null
             }
@@ -46,7 +64,9 @@ class JsonSource(val node: JsonNode) : Source {
             return mutableListOf<JsonNode>().apply {
                 addAll(node.elements().asSequence())
             }.map {
-                JsonSource(it)
+                JsonSource(it, context).apply {
+                    addInfo("inList", this@JsonSource.info.toDescription())
+                }
             }
         } else {
             throw WrongTypeException(this, node.nodeType.name, JsonNodeType.ARRAY.name)
@@ -61,7 +81,9 @@ class JsonSource(val node: JsonNode) : Source {
                 }
             }.mapValues {
                 (_, value) ->
-                JsonSource(value)
+                JsonSource(value, context).apply {
+                    addInfo("inMap", this@JsonSource.info.toDescription())
+                }
             }
         } else {
             throw WrongTypeException(this, node.nodeType.name, JsonNodeType.OBJECT.name)

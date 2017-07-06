@@ -14,3 +14,5 @@ fun getUnits(s: String): String {
     }
     return s.substring(i + 1)
 }
+
+fun String.notEmptyOr(default: String): String = if (isEmpty()) default else this

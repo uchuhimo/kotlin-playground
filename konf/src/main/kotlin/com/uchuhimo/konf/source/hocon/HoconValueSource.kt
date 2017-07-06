@@ -8,9 +8,27 @@ import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.source.ParseException
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.WrongTypeException
+import com.uchuhimo.konf.source.toDescription
 
-class HoconValueSource(val value: ConfigValue) : Source {
-    override val description: String get() = value.origin().description()
+class HoconValueSource(
+        val value: ConfigValue,
+        context: Map<String, String> = mapOf()
+) : Source {
+    val _info = mutableMapOf("type" to "HOCON-value")
+
+    override val info: Map<String, String> get() = _info
+
+    override fun addInfo(name: String, value: String) {
+        _info.put(name, value)
+    }
+
+    val _context: MutableMap<String, String> = context.toMutableMap()
+
+    override val context: Map<String, String> get() = _context
+
+    override fun addContext(name: String, value: String) {
+        _context.put(name, value)
+    }
 
     private val type = value.valueType()
 
@@ -41,7 +59,7 @@ class HoconValueSource(val value: ConfigValue) : Source {
 
     private val hoconSource: HoconSource by lazy {
         checkType(type, ConfigValueType.OBJECT)
-        HoconSource((value as ConfigObject).toConfig())
+        HoconSource((value as ConfigObject).toConfig(), context)
     }
 
     override fun contains(path: Path): Boolean = hoconSource.contains(path)
@@ -52,7 +70,9 @@ class HoconValueSource(val value: ConfigValue) : Source {
         checkType(type, ConfigValueType.LIST)
         return mutableListOf<Source>().apply {
             for (value in (value as ConfigList)) {
-                add(HoconValueSource(value))
+                add(HoconValueSource(value, context).apply {
+                    addInfo("inList", this@HoconValueSource.info.toDescription())
+                })
             }
         }
     }
@@ -61,7 +81,9 @@ class HoconValueSource(val value: ConfigValue) : Source {
         checkType(type, ConfigValueType.OBJECT)
         return mutableMapOf<String, Source>().apply {
             for ((key, value) in (value as ConfigObject)) {
-                put(key, HoconValueSource(value))
+                put(key, HoconValueSource(value, context).apply {
+                    addInfo("inMap", this@HoconValueSource.info.toDescription())
+                })
             }
         }
     }

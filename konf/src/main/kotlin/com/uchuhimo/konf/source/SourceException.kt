@@ -11,10 +11,10 @@ open class SourceException : ConfigException {
 }
 
 class WrongTypeException(val source: Source, actual: String, expected: String) :
-        SourceException("${source.description} has type $actual rather than $expected")
+        SourceException("source ${source.description} has type $actual rather than $expected")
 
 class NoSuchPathException(val source: Source, val path: Path) :
-        SourceException("cannot find path \"${path.name}\" in ${source.description}")
+        SourceException("cannot find path \"${path.name}\" in source ${source.description}")
 
 class ParseException : SourceException {
     constructor(message: String) : super(message)
@@ -22,7 +22,7 @@ class ParseException : SourceException {
 }
 
 class UnsupportedTypeException(val source: Source, val clazz: Class<*>) :
-        SourceException("value of type ${clazz.simpleName} is unsupported in ${source.description}")
+        SourceException("value of type ${clazz.simpleName} is unsupported in source ${source.description}")
 
 class UnsupportedMapKeyException(val clazz: Class<*>) : SourceException(
         "cannot support map with ${clazz.simpleName} key, only support string key")

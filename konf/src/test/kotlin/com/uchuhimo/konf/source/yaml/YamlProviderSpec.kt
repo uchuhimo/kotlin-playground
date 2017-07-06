@@ -14,6 +14,9 @@ object YamlProviderSpec : SubjectSpek<YamlProvider>({
     given("a source provider") {
         on("create source from reader") {
             val source = subject.fromReader("type: reader".reader())
+            it("should have correct type") {
+                assertThat(source.info["type"], equalTo("YAML"))
+            }
             it("should return a source which contains value from reader") {
                 assertThat(source.get("type").toText(), equalTo("reader"))
             }
@@ -21,6 +24,9 @@ object YamlProviderSpec : SubjectSpek<YamlProvider>({
         on("create source from input stream") {
             val source = subject.fromInputStream(
                     tempFileOf("type: inputStream").inputStream())
+            it("should have correct type") {
+                assertThat(source.info["type"], equalTo("YAML"))
+            }
             it("should return a source which contains value from input stream") {
                 assertThat(source.get("type").toText(), equalTo("inputStream"))
             }

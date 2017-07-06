@@ -42,7 +42,15 @@ import kotlin.collections.component1
 import kotlin.collections.component2
 
 interface Source {
-    val description: String
+    val description: String get() = (info + context).toDescription()
+
+    val context: Map<String, String>
+
+    fun addContext(name: String, value: String): Unit
+
+    val info: Map<String, String>
+
+    fun addInfo(name: String, value: String): Unit
 
     fun contains(path: Path): Boolean
 
@@ -143,9 +151,17 @@ interface Source {
     fun toSizeInBytes(): SizeInBytes = SizeInBytes.parse(toText())
 }
 
+fun Map<String, String>.toDescription() = map { (name, value) ->
+    "$name: $value"
+}.joinToString(separator = ", ", prefix = "[", postfix = "]")
+
 fun String.toPath(): Path = listOf(this)
 
 fun Source.withFallback(fallback: Source): Source = object : Source by this {
+    init {
+        addInfo("fallback", fallback.description)
+    }
+
     override fun contains(path: List<String>): Boolean =
             this@withFallback.contains(path) || fallback.contains(path)
 
@@ -166,7 +182,7 @@ fun Source.withFallback(fallback: Source): Source = object : Source by this {
 }
 
 internal fun Config.loadFromSource(source: Source): Config {
-    return withLayer(source.description).apply {
+    return withLayer("source: ${source.description}").apply {
         for (item in this) {
             val path = item.path
             if (source.contains(path)) {

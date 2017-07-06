@@ -5,6 +5,6 @@ import com.uchuhimo.konf.source.base.FlatSource
 
 object EnvProvider {
     fun fromEnv(): Source {
-        return FlatSource(System.getenv())
+        return FlatSource(System.getenv(), type = "system-environment")
     }
 }

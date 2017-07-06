@@ -4,7 +4,6 @@ import com.natpryce.hamkrest.absent
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
-import com.natpryce.hamkrest.isIn
 import com.natpryce.hamkrest.throws
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it

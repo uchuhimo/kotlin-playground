@@ -6,15 +6,31 @@ import com.uchuhimo.konf.name
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.unsupported
 
-class HoconSource(val config: Config) : Source {
-    override val description: String get() = config.origin().description()
+class HoconSource(
+        val config: Config,
+        context: Map<String, String> = mapOf()) : Source {
+    val _info = mutableMapOf("type" to "HOCON")
+
+    override val info: Map<String, String> get() = _info
+
+    override fun addInfo(name: String, value: String) {
+        _info.put(name, value)
+    }
+
+    val _context: MutableMap<String, String> = context.toMutableMap()
+
+    override val context: Map<String, String> get() = _context
+
+    override fun addContext(name: String, value: String) {
+        _context.put(name, value)
+    }
 
     override fun contains(path: Path): Boolean = config.hasPath(path.name)
 
     override fun getOrNull(path: Path): Source? {
         val name = path.name
         if (config.hasPath(name)) {
-            return HoconValueSource(config.getValue(name))
+            return HoconValueSource(config.getValue(name), context)
         } else {
             return null
         }

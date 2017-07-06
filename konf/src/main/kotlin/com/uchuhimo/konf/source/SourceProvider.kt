@@ -11,9 +11,13 @@ interface SourceProvider {
 
     fun fromInputStream(inputStream: InputStream): Source
 
-    fun fromFile(file: File): Source = fromInputStream(file.inputStream().buffered())
+    fun fromFile(file: File): Source = fromInputStream(file.inputStream().buffered()).apply {
+        addContext("file", file.toString())
+    }
 
-    fun fromString(content: String): Source = fromReader(content.reader())
+    fun fromString(content: String): Source = fromReader(content.reader()).apply {
+        addContext("content", content)
+    }
 
     fun fromBytes(content: ByteArray): Source = fromInputStream(content.inputStream())
 
@@ -27,12 +31,16 @@ interface SourceProvider {
             if (host == null || host.isEmpty()) {
                 val path = url.path
                 if (path.indexOf('%') < 0) {
-                    return fromInputStream(FileInputStream(url.path))
+                    return fromInputStream(FileInputStream(url.path)).apply {
+                        addContext("url", url.toString())
+                    }
 
                 }
             }
         }
-        return fromInputStream(url.openStream())
+        return fromInputStream(url.openStream()).apply {
+            addContext("url", url.toString())
+        }
     }
 
     fun fromResource(resource: String): Source {
@@ -47,6 +55,8 @@ interface SourceProvider {
             val source = fromUrl(url)
             sources.add(source)
         }
-        return sources.reduce(Source::withFallback)
+        return sources.reduce(Source::withFallback).apply {
+            addContext("resource", resource)
+        }
     }
 }

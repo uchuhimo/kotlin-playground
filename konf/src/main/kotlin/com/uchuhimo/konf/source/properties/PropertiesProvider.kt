@@ -17,10 +17,10 @@ object PropertiesProvider : SourceProvider {
     }
 
     override fun fromReader(reader: Reader): Source =
-            FlatSource(Properties().apply { load(reader) }.toMap())
+            FlatSource(Properties().apply { load(reader) }.toMap(), type = "properties")
 
     override fun fromInputStream(inputStream: InputStream): Source =
-            FlatSource(Properties().apply { load(inputStream) }.toMap())
+            FlatSource(Properties().apply { load(inputStream) }.toMap(), type = "properties")
 
-    fun fromSystem(): Source = FlatSource(System.getProperties().toMap())
+    fun fromSystem(): Source = FlatSource(System.getProperties().toMap(), type = "system-properties")
 }
