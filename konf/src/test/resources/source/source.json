@@ -10,7 +10,7 @@
       "double": 1.5,
       "float": -1.5,
       "bigDecimal": 1.5,
-      "char": " ",
+      "char": "a",
       "string": "string",
       "offsetTime": "10:15:30+01:00",
       "offsetDateTime": "2007-12-03T10:15:30+01:00",

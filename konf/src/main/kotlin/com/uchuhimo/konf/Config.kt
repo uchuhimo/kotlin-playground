@@ -1,6 +1,10 @@
 package com.uchuhimo.konf
 
 import com.uchuhimo.collections.mutableBiMapOf
+import com.uchuhimo.konf.annotation.JavaApi
+import com.uchuhimo.konf.source.DefaultLoaders
+import com.uchuhimo.konf.source.Source
+import com.uchuhimo.konf.source.loadFromSource
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
 import kotlin.concurrent.write
@@ -39,6 +43,13 @@ interface Config : ConfigGetter {
     val specs: List<ConfigSpec>
     fun addSpec(spec: ConfigSpec)
     fun withLayer(name: String = ""): Config
+
+    fun load(source: Source): Config = loadFromSource(source)
+
+    @JavaApi
+    fun loadFrom(): DefaultLoaders = loadFrom
+
+    val loadFrom: DefaultLoaders get() = DefaultLoaders(this)
 
     @Suppress("NAME_SHADOWING", "UNUSED_ANONYMOUS_PARAMETER")
     fun visitAsTree(

@@ -165,14 +165,16 @@ fun Source.withFallback(fallback: Source): Source = object : Source by this {
             this@withFallback.getOrNull(key) ?: fallback.getOrNull(key)
 }
 
-fun Config.load(source: Source) {
-    for (item in this) {
-        val path = item.path
-        if (source.contains(path)) {
-            try {
-                rawSet(item, source.get(path).toValue(item.type))
-            } catch (cause: SourceException) {
-                throw LoadException(path, cause)
+internal fun Config.loadFromSource(source: Source): Config {
+    return withLayer(source.description).apply {
+        for (item in this) {
+            val path = item.path
+            if (source.contains(path)) {
+                try {
+                    rawSet(item, source.get(path).toValue(item.type))
+                } catch (cause: SourceException) {
+                    throw LoadException(path, cause)
+                }
             }
         }
     }

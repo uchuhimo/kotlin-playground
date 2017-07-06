@@ -7,7 +7,7 @@ import com.uchuhimo.konf.source.ParseException
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.toPath
 
-open class FlatMapSource(val map: Map<String, String>, val prefix: String = "") : Source {
+open class FlatSource(val map: Map<String, String>, val prefix: String = "") : Source {
     override val description: String
         get() = "flat map"
 
@@ -37,9 +37,9 @@ open class FlatMapSource(val map: Map<String, String>, val prefix: String = "") 
         } else {
             if (contains(path)) {
                 if (prefix.isEmpty()) {
-                    return FlatMapSource(map, path.name)
+                    return FlatSource(map, path.name)
                 } else {
-                    return FlatMapSource(map, "$prefix.${path.name}")
+                    return FlatSource(map, "$prefix.${path.name}")
                 }
             } else {
                 return null
@@ -68,7 +68,7 @@ open class FlatMapSource(val map: Map<String, String>, val prefix: String = "") 
         }.map {
             it.takeWhile { it != '.' }
         }.toSet().associate {
-            it to FlatMapSource(map, "$prefix.$it")
+            it to FlatSource(map, "$prefix.$it")
         }
     }
 

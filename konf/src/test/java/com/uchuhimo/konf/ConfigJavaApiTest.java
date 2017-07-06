@@ -7,6 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+
 @DisplayName("test Java API of Config")
 class ConfigJavaApiTest {
   private Config config;
@@ -29,6 +31,31 @@ class ConfigJavaApiTest {
   void createWithInit() {
     final Config config = Configs.create(it -> it.addSpec(NetworkBufferInJava.spec));
     assertThat(config.getItems().size(), equalTo(4));
+  }
+
+  @Test
+  @DisplayName("test fluent API to load from map")
+  void loadFromMap() {
+    final HashMap<String, Integer> map = new HashMap<>();
+    map.put(NetworkBufferInJava.size.getName(), 1024);
+    final Config newConfig = config.loadFrom().map.kv(map);
+    assertThat(newConfig.get(NetworkBufferInJava.size), equalTo(1024));
+  }
+
+  @Test
+  @DisplayName("test fluent API to load from loader")
+  void loadFromLoader() {
+    final Config newConfig = config.loadFrom().hocon.string(
+        NetworkBufferInJava.size.getName() + " = 1024");
+    assertThat(newConfig.get(NetworkBufferInJava.size), equalTo(1024));
+  }
+
+  @Test
+  @DisplayName("test fluent API to load from system")
+  void loadFromSystem() {
+    System.setProperty(NetworkBufferInJava.size.getName(), "1024");
+    final Config newConfig = config.loadFrom().system.properties();
+    assertThat(newConfig.get(NetworkBufferInJava.size), equalTo(1024));
   }
 
   @Test

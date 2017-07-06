@@ -4,7 +4,6 @@ import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.uchuhimo.konf.Config
 import com.uchuhimo.konf.assertTrue
-import com.uchuhimo.konf.source.base.asKVSource
 import com.uchuhimo.konf.toSizeInBytes
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
@@ -29,10 +28,8 @@ object SourceLoadSpec : SubjectSpek<Config>({
     subject {
         Config {
             addSpec(ConfigForLoad)
-            load(loadContent.asKVSource())
-        }
+        }.loadFrom.map.kv(loadContent)
     }
-
     given("a source") {
         on("load the source into config") {
             it("should contain every value specified in the source") {
@@ -48,7 +45,7 @@ object SourceLoadSpec : SubjectSpek<Config>({
                 assertThat(subject[ConfigForLoad.floatItem], equalTo(-1.5f))
                 assertThat(subject[ConfigForLoad.bigDecimalItem], equalTo(BigDecimal.valueOf(1.5)))
 
-                assertThat(subject[ConfigForLoad.charItem], equalTo(' '))
+                assertThat(subject[ConfigForLoad.charItem], equalTo('a'))
 
                 assertThat(subject[ConfigForLoad.stringItem], equalTo("string"))
                 assertThat(subject[ConfigForLoad.offsetTimeItem],
@@ -153,7 +150,7 @@ private val loadContent = mapOf<String, Any>(
         "float" to -1.5f,
         "bigDecimal" to BigDecimal.valueOf(1.5),
 
-        "char" to ' ',
+        "char" to 'a',
 
         "string" to "string",
         "offsetTime" to OffsetTime.parse("10:15:30+01:00"),
