@@ -68,17 +68,7 @@ object ConfigInJavaSpec : SubjectSpek<Config>({
         }
         on("iterate items in config") {
             it("should cover all items in config") {
-                for (item in subject) {
-                    assertThat(item, isIn(spec.items))
-                }
-                val items = mutableListOf<Item<*>>()
-                for (item in subject) {
-                    items += item
-                }
-                for (item in spec.items) {
-                    assertThat(item, isIn(items))
-                }
-                assertThat(items.size, equalTo(spec.items.size))
+                assertThat(subject.items.toSet(), equalTo(spec.items.toSet()))
             }
         }
         group("get operation") {
@@ -98,16 +88,16 @@ object ConfigInJavaSpec : SubjectSpek<Config>({
             }
             on("get with valid name") {
                 it("should return corresponding value") {
-                    assertThat(subject<String>("${spec.prefix}.name"), equalTo("buffer"))
+                    assertThat(subject<String>(spec.qualify("name")), equalTo("buffer"))
                 }
             }
             on("get with invalid name") {
                 it("should throw NoSuchItemException when using `get`") {
-                    assertThat({ subject<String>("${spec.prefix}.invalid") }, throws(has(
-                            NoSuchItemException::name, equalTo("${spec.prefix}.invalid"))))
+                    assertThat({ subject<String>(spec.qualify("invalid")) }, throws(has(
+                            NoSuchItemException::name, equalTo(spec.qualify("invalid")))))
                 }
                 it("should return null when using `getOrNull`") {
-                    assertThat(subject.getOrNull<String>("${spec.prefix}.invalid"), absent())
+                    assertThat(subject.getOrNull<String>(spec.qualify("invalid")), absent())
                 }
             }
             on("get unset item") {
@@ -138,13 +128,11 @@ object ConfigInJavaSpec : SubjectSpek<Config>({
                 test("before set, the item should be lazy; after set," +
                         " the item should be no longer lazy, and it contains the specified value") {
                     subject[size] = 1024
-                    assertThat(subject[maxSize],
-                            equalTo(subject[size] * 2))
+                    assertThat(subject[maxSize], equalTo(subject[size] * 2))
                     subject[maxSize] = 0
                     assertThat(subject[maxSize], equalTo(0))
                     subject[size] = 2048
-                    assertThat(subject[maxSize],
-                            !equalTo(subject[size] * 2))
+                    assertThat(subject[maxSize], !equalTo(subject[size] * 2))
                     assertThat(subject[maxSize], equalTo(0))
                 }
             }
@@ -155,7 +143,7 @@ object ConfigInJavaSpec : SubjectSpek<Config>({
                 }
             }
             on("set with valid name") {
-                subject["${spec.prefix}.size"] = 1024
+                subject[spec.qualify("size")] = 1024
                 it("should contain the specified value") {
                     assertThat(subject[size], equalTo(1024))
                 }
@@ -168,31 +156,27 @@ object ConfigInJavaSpec : SubjectSpek<Config>({
             }
             on("set with incorrect type of value") {
                 it("should throw ClassCastException") {
-                    assertThat({ subject[size.name] = "1024" },
-                            throws<ClassCastException>())
+                    assertThat({ subject[size.name] = "1024" }, throws<ClassCastException>())
                 }
             }
             on("lazy set with valid item") {
                 subject.lazySet(maxSize) { it[size] * 4 }
                 subject[size] = 1024
                 it("should contain the specified value") {
-                    assertThat(subject[maxSize],
-                            equalTo(subject[size] * 4))
+                    assertThat(subject[maxSize], equalTo(subject[size] * 4))
                 }
             }
             on("lazy set with valid name") {
                 subject.lazySet(maxSize.name) { it[size] * 4 }
                 subject[size] = 1024
                 it("should contain the specified value") {
-                    assertThat(subject[maxSize],
-                            equalTo(subject[size] * 4))
+                    assertThat(subject[maxSize], equalTo(subject[size] * 4))
                 }
             }
             on("lazy set with valid name and invalid value with incompatible type") {
                 subject.lazySet(maxSize.name) { "string" }
                 it("should throw InvalidLazySetException when getting") {
-                    assertThat({ subject[maxSize.name] },
-                            throws<InvalidLazySetException>())
+                    assertThat({ subject[maxSize.name] }, throws<InvalidLazySetException>())
                 }
             }
             on("unset with valid item") {

@@ -1,6 +1,6 @@
 package com.uchuhimo.konf
 
-fun <T> unsupported(): T {
+fun unsupported(): Nothing {
     throw UnsupportedOperationException()
 }
 

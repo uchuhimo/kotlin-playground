@@ -87,16 +87,16 @@ object ConfigSpek : SubjectSpek<Config>({
             }
             on("get with valid name") {
                 it("should return corresponding value") {
-                    assertThat(subject<String>("${spec.prefix}.name"), equalTo("buffer"))
+                    assertThat(subject<String>(spec.qualify("name")), equalTo("buffer"))
                 }
             }
             on("get with invalid name") {
                 it("should throw NoSuchItemException when using `get`") {
-                    assertThat({ subject<String>("${spec.prefix}.invalid") }, throws(has(
-                            NoSuchItemException::name, equalTo("${spec.prefix}.invalid"))))
+                    assertThat({ subject<String>(spec.qualify("invalid")) }, throws(has(
+                            NoSuchItemException::name, equalTo(spec.qualify("invalid")))))
                 }
                 it("should return null when using `getOrNull`") {
-                    assertThat(subject.getOrNull<String>("${spec.prefix}.invalid"), absent())
+                    assertThat(subject.getOrNull<String>(spec.qualify("invalid")), absent())
                 }
             }
             on("get unset item") {
@@ -142,7 +142,7 @@ object ConfigSpek : SubjectSpek<Config>({
                 }
             }
             on("set with valid name") {
-                subject["${spec.prefix}.size"] = 1024
+                subject[spec.qualify("size")] = 1024
                 it("should contain the specified value") {
                     assertThat(subject[size], equalTo(1024))
                 }

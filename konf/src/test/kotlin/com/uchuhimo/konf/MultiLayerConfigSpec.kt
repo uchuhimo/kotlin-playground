@@ -33,7 +33,7 @@ object MultiLayerConfigSpec : SubjectSpek<Config>({
             }
         }
         on("set with name") {
-            subject["${NetworkBuffer.prefix}.name"] = "newName"
+            subject[NetworkBuffer.name.name] = "newName"
             it("should contain the specified value in the top level," +
                     " and keep the rest levels unchanged") {
                 assertThat(subject[NetworkBuffer.name], equalTo("newName"))

@@ -51,10 +51,10 @@ class ConfigJavaApiTest {
   }
 
   @Test
-  @DisplayName("test fluent API to load from system")
+  @DisplayName("test fluent API to load from system properties")
   void loadFromSystem() {
     System.setProperty(NetworkBufferInJava.size.getName(), "1024");
-    final Config newConfig = config.loadFrom().system.properties();
+    final Config newConfig = config.loadFrom().systemProperties();
     assertThat(newConfig.get(NetworkBufferInJava.size), equalTo(1024));
   }
 

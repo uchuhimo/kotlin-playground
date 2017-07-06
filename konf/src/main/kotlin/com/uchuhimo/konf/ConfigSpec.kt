@@ -1,6 +1,6 @@
 package com.uchuhimo.konf
 
-open class ConfigSpec(val prefix: String) {
+open class ConfigSpec(val prefix: String = "") {
     private val _items = mutableListOf<Item<*>>()
 
     val items: List<Item<*>> = _items
@@ -36,7 +36,7 @@ open class ConfigSpec(val prefix: String) {
                     description = description
             ) {}
 
-    internal fun qualify(name: String) = "$prefix.$name"
+    internal fun qualify(name: String) = if (prefix.isEmpty()) name else "$prefix.$name"
 
     internal fun addItem(item: Item<*>) {
         _items += item

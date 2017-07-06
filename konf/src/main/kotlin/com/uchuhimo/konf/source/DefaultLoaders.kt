@@ -11,6 +11,7 @@ import com.uchuhimo.konf.source.properties.PropertiesProvider
 import com.uchuhimo.konf.source.toml.TomlProvider
 import com.uchuhimo.konf.source.xml.XmlProvider
 import com.uchuhimo.konf.source.yaml.YamlProvider
+import java.io.File
 
 class DefaultLoaders(val config: Config) {
     @JvmField
@@ -32,16 +33,15 @@ class DefaultLoaders(val config: Config) {
     val yaml = Loader(config, YamlProvider)
 
     @JvmField
-    val system = SystemLoader(config)
-
-    @JvmField
     val map = MapLoader(config)
-}
 
-class SystemLoader(val config: Config) {
     fun env(): Config = config.load(EnvProvider.fromEnv())
 
-    fun properties(): Config = config.load(PropertiesProvider.fromSystem())
+    fun systemProperties(): Config = config.load(PropertiesProvider.fromSystem())
+
+    fun file(file: File): Config {
+        TODO()
+    }
 }
 
 class MapLoader(val config: Config) {

@@ -11,7 +11,7 @@ object ConfigSpecSpek : Spek({
     given("a configSpec") {
         val spec = NetworkBuffer
         it("should name items correctly") {
-            assertThat(spec.size.name, equalTo("${spec.prefix}.size"))
+            assertThat(spec.size.name, equalTo(spec.qualify("size")))
         }
         it("should contain all specified items") {
             assertThat(spec.size, isIn(spec.items))
