@@ -3,6 +3,7 @@ package com.uchuhimo.konf.source
 import com.uchuhimo.konf.ConfigException
 import com.uchuhimo.konf.Path
 import com.uchuhimo.konf.name
+import java.io.File
 
 open class SourceException : ConfigException {
     constructor(message: String) : super(message)
@@ -33,3 +34,7 @@ class SourceNotFoundException : SourceException {
     constructor(message: String) : super(message)
     constructor(message: String, cause: Throwable) : super(message, cause)
 }
+
+class UnsupportedExtensionException(file: File) : SourceException(
+        "cannot detect supported extension for \"${file.name}\"," +
+                " supported extensions: conf, json, properties, toml, xml, yml, yaml")

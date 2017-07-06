@@ -40,7 +40,15 @@ class DefaultLoaders(val config: Config) {
     fun systemProperties(): Config = config.load(PropertiesProvider.fromSystem())
 
     fun file(file: File): Config {
-        TODO()
+        return when (file.extension) {
+            "conf" -> hocon.file(file)
+            "json" -> json.file(file)
+            "properties" -> properties.file(file)
+            "toml" -> toml.file(file)
+            "xml" -> xml.file(file)
+            "yml", "yaml" -> yaml.file(file)
+            else -> throw UnsupportedExtensionException(file)
+        }
     }
 }
 

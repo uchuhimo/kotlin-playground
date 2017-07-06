@@ -11,7 +11,7 @@ object YamlSourceLoadSpec : SubjectSpek<Config>({
     subject {
         Config {
             addSpec(ConfigForLoad)
-        }.loadFrom.yaml.resource("source/source.yml")
+        }.loadFrom.yaml.resource("source/source.yaml")
     }
 
     itBehavesLike(SourceLoadSpec)
