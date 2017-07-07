@@ -16,7 +16,7 @@ interface SourceProvider {
     }
 
     fun fromString(content: String): Source = fromReader(content.reader()).apply {
-        addContext("content", content)
+        addContext("content", "\"\n$content\n\"")
     }
 
     fun fromBytes(content: ByteArray): Source = fromInputStream(content.inputStream())

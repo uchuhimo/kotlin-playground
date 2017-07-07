@@ -50,7 +50,7 @@ object SourceProviderSpec : SubjectSpek<SourceProvider>({
             val content = "type = string"
             val source = subject.fromString(content)
             it("should create from the specified string") {
-                assertThat(source.context["content"], equalTo(content))
+                assertThat(source.context["content"], equalTo("\"\n$content\n\""))
             }
             it("should return a source which contains value in string") {
                 assertThat(source.get("type").toText(), equalTo("string"))

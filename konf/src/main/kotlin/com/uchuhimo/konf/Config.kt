@@ -68,13 +68,11 @@ interface Config : ConfigGetter {
     }
 }
 
-private class ConfigImpl private constructor(
-        override val name: String,
-        override val parent: ConfigImpl?,
+private class ConfigImpl constructor(
+        override val name: String = "",
+        override val parent: ConfigImpl? = null,
         override val mapper: ObjectMapper = createDefaultMapper()
 ) : Config {
-    constructor() : this("", null)
-
     private val specsInLayer = mutableListOf<ConfigSpec>()
     private val valueByItem = mutableMapOf<Item<*>, ValueState>()
     private val nameByItem = mutableBiMapOf<Item<*>, String>()
