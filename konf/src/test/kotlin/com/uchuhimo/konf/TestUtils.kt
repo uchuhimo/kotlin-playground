@@ -13,3 +13,7 @@ fun tempFileOf(content: String, prefix: String = "tmp", suffix: String = ".tmp")
 fun assertTrue(actual: Boolean) {
     assertThat(actual, equalTo(true))
 }
+
+fun assertFalse(actual: Boolean) {
+    assertThat(actual, equalTo(false))
+}
