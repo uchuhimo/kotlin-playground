@@ -5,20 +5,22 @@ sealed class ConfigTree {
 
     abstract fun deepCopy(): ConfigTree
 
+    abstract val isItem: Boolean
+
     fun visit(
-            onEnterNode: (ConfigNode) -> Unit = { _ -> },
-            onLeaveNode: (ConfigNode) -> Unit = { _ -> },
-            onEnterLeaf: (ConfigLeaf<*>) -> Unit = { _ -> }) {
+            onEnterPath: (ConfigPathNode) -> Unit = { _ -> },
+            onLeavePath: (ConfigPathNode) -> Unit = { _ -> },
+            onEnterItem: (ConfigItemNode<*>) -> Unit = { _ -> }) {
         when (this) {
-            is ConfigNode -> {
-                onEnterNode(this)
+            is ConfigPathNode -> {
+                onEnterPath(this)
                 for (child in children) {
-                    child.visit(onEnterNode, onLeaveNode, onEnterLeaf)
+                    child.visit(onEnterPath, onLeavePath, onEnterItem)
                 }
-                onLeaveNode(this)
+                onLeavePath(this)
             }
-            is ConfigLeaf<*> -> {
-                onEnterLeaf(this)
+            is ConfigItemNode<*> -> {
+                onEnterItem(this)
             }
         }
     }
@@ -26,24 +28,28 @@ sealed class ConfigTree {
     val items: Iterable<Item<*>> get() {
         val items = mutableListOf<Item<*>>()
         visit(
-                onEnterLeaf = { leaf ->
+                onEnterItem = { leaf ->
                     items += leaf.item
                 })
         return items
     }
 }
 
-class ConfigLeaf<T : Any>(
+class ConfigItemNode<T : Any>(
         override val path: List<String>,
         val item: Item<T>
 ) : ConfigTree() {
-    override fun deepCopy(): ConfigLeaf<T> = ConfigLeaf(path, item)
+    override fun deepCopy(): ConfigItemNode<T> = ConfigItemNode(path, item)
+
+    override val isItem: Boolean = false
 }
 
-class ConfigNode(
+class ConfigPathNode(
         override val path: List<String>,
         val children: MutableList<ConfigTree>
 ) : ConfigTree() {
-    override fun deepCopy(): ConfigNode =
-            ConfigNode(path, children.mapTo(mutableListOf(), ConfigTree::deepCopy))
+    override fun deepCopy(): ConfigPathNode =
+            ConfigPathNode(path, children.mapTo(mutableListOf(), ConfigTree::deepCopy))
+
+    override val isItem: Boolean = true
 }

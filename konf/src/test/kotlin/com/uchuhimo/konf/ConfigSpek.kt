@@ -213,39 +213,5 @@ object ConfigSpek : SubjectSpek<Config>({
                 }
             }
         }
-        group("generate doc") {
-            val complexConfig by memoized {
-                subject.apply {
-                    addSpec(object : ConfigSpec("disk.file") {
-                        val size = optional("size", 1024, description = "size of disk file")
-                    })
-                }
-            }
-            on("generate Java properties doc") {
-                it("generate doc in correct format") {
-                    println(complexConfig.generatePropertiesDoc())
-                }
-            }
-            on("generate HOCON doc") {
-                it("generate doc in correct format") {
-                    println(complexConfig.generateHoconDoc())
-                }
-            }
-            on("generate YAML doc") {
-                it("generate doc in correct format") {
-                    println(complexConfig.generateYamlDoc())
-                }
-            }
-            on("generate TOML doc") {
-                it("generate doc in correct format") {
-                    println(complexConfig.generateTomlDoc())
-                }
-            }
-            on("generate XML doc") {
-                it("generate doc in correct format") {
-                    println(complexConfig.generateXmlDoc())
-                }
-            }
-        }
     }
 })

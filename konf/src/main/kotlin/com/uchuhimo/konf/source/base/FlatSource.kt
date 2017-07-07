@@ -7,7 +7,7 @@ import com.uchuhimo.konf.source.NoSuchPathException
 import com.uchuhimo.konf.source.ParseException
 import com.uchuhimo.konf.source.Source
 import com.uchuhimo.konf.source.toDescription
-import com.uchuhimo.konf.source.toPath
+import com.uchuhimo.konf.toPath
 
 open class FlatSource(
         val map: Map<String, String>,

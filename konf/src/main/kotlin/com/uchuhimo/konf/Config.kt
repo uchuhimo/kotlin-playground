@@ -53,13 +53,9 @@ interface Config : ConfigGetter {
 
     val loadFrom: DefaultLoaders get() = DefaultLoaders(this)
 
-    val mapper: ObjectMapper
+    val toTree: ConfigTree
 
-    @Suppress("NAME_SHADOWING", "UNUSED_ANONYMOUS_PARAMETER")
-    fun visitAsTree(
-            onEnterNode: (List<String>) -> Unit = { path -> },
-            onLeaveNode: (List<String>) -> Unit = { path -> },
-            onEnterLeaf: (List<String>, Item<*>) -> Unit = { path, item -> })
+    val mapper: ObjectMapper
 
     companion object {
         operator fun invoke(): Config = ConfigImpl()
@@ -80,7 +76,7 @@ private class ConfigImpl constructor(
         if (parent != null) {
             parent.tree.deepCopy()
         } else {
-            ConfigNode(path = emptyList(), children = mutableListOf())
+            ConfigPathNode(path = emptyList(), children = mutableListOf())
         }
     }
     private var hasChildren = false
@@ -109,15 +105,7 @@ private class ConfigImpl constructor(
         override fun next(): Item<*> = current.next()
     }
 
-    override fun visitAsTree(
-            onEnterNode: (List<String>) -> Unit,
-            onLeaveNode: (List<String>) -> Unit,
-            onEnterLeaf: (List<String>, Item<*>) -> Unit) {
-        tree.visit(
-                onLeaveNode = { node -> onLeaveNode(node.path) },
-                onEnterNode = { node -> onEnterNode(node.path) },
-                onEnterLeaf = { leaf -> onEnterLeaf(leaf.path, leaf.item) })
-    }
+    override val toTree: ConfigTree get() = tree.deepCopy()
 
     override fun <T : Any> get(item: Item<T>): T = getOrNull(item, errorWhenUnset = true) ?:
             throw NoSuchItemException(item.name)
@@ -313,7 +301,7 @@ private class ConfigImpl constructor(
 
     private tailrec fun addNode(tree: ConfigTree, path: List<String>, item: Item<*>) {
         when (tree) {
-            is ConfigNode -> {
+            is ConfigPathNode -> {
                 if (path.isEmpty()) {
                     throw NameConflictException("${item.name} cannot be added" +
                             " since the following items has been added to config:" +
@@ -324,15 +312,15 @@ private class ConfigImpl constructor(
                     addNode(matchChild, path.drop(1), item)
                 } else {
                     if (path.size == 1) {
-                        tree.children += ConfigLeaf(tree.path + path[0], item)
+                        tree.children += ConfigItemNode(tree.path + path[0], item)
                     } else {
-                        val child = ConfigNode(tree.path + path[0], mutableListOf())
+                        val child = ConfigPathNode(tree.path + path[0], mutableListOf())
                         tree.children += child
                         addNode(child, path.drop(1), item)
                     }
                 }
             }
-            is ConfigLeaf<*> -> {
+            is ConfigItemNode<*> -> {
                 if (path.isEmpty()) {
                     throw NameConflictException("item ${item.name} has been added")
                 } else {

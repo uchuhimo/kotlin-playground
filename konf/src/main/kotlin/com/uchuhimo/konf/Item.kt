@@ -27,6 +27,8 @@ typealias Path = List<String>
 
 val Path.name: String get() = joinToString(".")
 
+fun String.toPath(): Path = listOf(this)
+
 open class RequiredItem<T : Any>(
         spec: ConfigSpec,
         name: String,

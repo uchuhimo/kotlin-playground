@@ -10,6 +10,7 @@ import com.uchuhimo.konf.name
 import com.uchuhimo.konf.source.base.ValueSource
 import com.uchuhimo.konf.source.base.asKVSource
 import com.uchuhimo.konf.source.base.asSource
+import com.uchuhimo.konf.toPath
 import org.jetbrains.spek.api.Spek
 import org.jetbrains.spek.api.dsl.given
 import org.jetbrains.spek.api.dsl.it
