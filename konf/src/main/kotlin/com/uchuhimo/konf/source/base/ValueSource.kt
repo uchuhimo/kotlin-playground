@@ -65,15 +65,23 @@ open class ValueSource(
 
     open fun Any.castToSource(context: Map<String, String>): Source = asSource(context = context)
 
+    override fun isList(): Boolean = value is List<*>
+
     override fun toList(): List<Source> = cast<List<Any>>().map {
         it.castToSource(context).apply { addInfo("inList", this@ValueSource.info.toDescription()) }
     }
 
     override fun toMap(): Map<String, Source> = unsupported()
 
+    override fun isText(): Boolean = value is String
+
     override fun toText(): String = cast()
 
+    override fun isBoolean(): Boolean = value is Boolean
+
     override fun toBoolean(): Boolean = cast()
+
+    override fun isLong(): Boolean = value is Long
 
     override fun toLong(): Long {
         try {
@@ -83,6 +91,8 @@ open class ValueSource(
         }
     }
 
+    override fun isDouble(): Boolean = value is Double
+
     override fun toDouble(): Double {
         try {
             return cast()
@@ -91,7 +101,11 @@ open class ValueSource(
         }
     }
 
+    override fun isInt(): Boolean = value is Int
+
     override fun toInt(): Int = cast()
+
+    override fun isShort(): Boolean = value is Short
 
     override fun toShort(): Short {
         try {
@@ -101,6 +115,8 @@ open class ValueSource(
         }
     }
 
+    override fun isByte(): Boolean = value is Byte
+
     override fun toByte(): Byte {
         try {
             return cast()
@@ -108,6 +124,8 @@ open class ValueSource(
             return super.toByte()
         }
     }
+
+    override fun isFloat(): Boolean = value is Float
 
     override fun toFloat(): Float {
         try {
@@ -117,6 +135,8 @@ open class ValueSource(
         }
     }
 
+    override fun isChar(): Boolean = value is Char
+
     override fun toChar(): Char {
         try {
             return cast()
@@ -124,6 +144,8 @@ open class ValueSource(
             return super.toChar()
         }
     }
+
+    override fun isBigInteger(): Boolean = value is BigInteger
 
     override fun toBigInteger(): BigInteger {
         try {
@@ -133,6 +155,8 @@ open class ValueSource(
         }
     }
 
+    override fun isBigDecimal(): Boolean = value is BigDecimal
+
     override fun toBigDecimal(): BigDecimal {
         try {
             return cast()
@@ -140,6 +164,8 @@ open class ValueSource(
             return super.toBigDecimal()
         }
     }
+
+    override fun isOffsetTime(): Boolean = value is OffsetTime
 
     override fun toOffsetTime(): OffsetTime {
         try {
@@ -149,6 +175,8 @@ open class ValueSource(
         }
     }
 
+    override fun isOffsetDateTime(): Boolean = value is OffsetDateTime
+
     override fun toOffsetDateTime(): OffsetDateTime {
         try {
             return cast()
@@ -157,6 +185,8 @@ open class ValueSource(
         }
     }
 
+    override fun isZonedDateTime(): Boolean = value is ZonedDateTime
+
     override fun toZonedDateTime(): ZonedDateTime {
         try {
             return cast()
@@ -164,6 +194,8 @@ open class ValueSource(
             return super.toZonedDateTime()
         }
     }
+
+    override fun isLocalDate(): Boolean = value is LocalDate
 
     override fun toLocalDate(): LocalDate {
         try {
@@ -177,6 +209,8 @@ open class ValueSource(
         }
     }
 
+    override fun isLocalTime(): Boolean = value is LocalTime
+
     override fun toLocalTime(): LocalTime {
         try {
             return cast()
@@ -184,6 +218,8 @@ open class ValueSource(
             return super.toLocalTime()
         }
     }
+
+    override fun isLocalDateTime(): Boolean = value is LocalDateTime
 
     override fun toLocalDateTime(): LocalDateTime {
         try {
@@ -197,6 +233,8 @@ open class ValueSource(
         }
     }
 
+    override fun isDate(): Boolean = value is Date
+
     override fun toDate(): Date {
         try {
             return cast()
@@ -204,6 +242,8 @@ open class ValueSource(
             return super.toDate()
         }
     }
+
+    override fun isYear(): Boolean = value is Year
 
     override fun toYear(): Year {
         try {
@@ -213,6 +253,8 @@ open class ValueSource(
         }
     }
 
+    override fun isYearMonth(): Boolean = value is YearMonth
+
     override fun toYearMonth(): YearMonth {
         try {
             return cast()
@@ -220,6 +262,8 @@ open class ValueSource(
             return super.toYearMonth()
         }
     }
+
+    override fun isInstant(): Boolean = value is Instant
 
     override fun toInstant(): Instant {
         try {
@@ -233,6 +277,8 @@ open class ValueSource(
         }
     }
 
+    override fun isDuration(): Boolean = value is Duration
+
     override fun toDuration(): Duration {
         try {
             return cast()
@@ -240,6 +286,8 @@ open class ValueSource(
             return super.toDuration()
         }
     }
+
+    override fun isSizeInBytes(): Boolean = value is SizeInBytes
 
     override fun toSizeInBytes(): SizeInBytes {
         try {

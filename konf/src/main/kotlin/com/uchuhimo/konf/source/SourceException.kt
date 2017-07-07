@@ -21,8 +21,13 @@ class ParseException : SourceException {
     constructor(message: String, cause: Throwable) : super(message, cause)
 }
 
-class UnsupportedTypeException(val source: Source, val clazz: Class<*>) :
-        SourceException("value of type ${clazz.simpleName} is unsupported in source ${source.description}")
+class UnsupportedTypeException : SourceException {
+    constructor(source: Source, clazz: Class<*>) :
+            super("value of type ${clazz.simpleName} is unsupported in source ${source.description}")
+
+    constructor(source: Source, clazz: Class<*>, cause: Throwable) :
+            super("value of type ${clazz.simpleName} is unsupported in source ${source.description}", cause)
+}
 
 class UnsupportedMapKeyException(val clazz: Class<*>) : SourceException(
         "cannot support map with ${clazz.simpleName} key, only support string key")

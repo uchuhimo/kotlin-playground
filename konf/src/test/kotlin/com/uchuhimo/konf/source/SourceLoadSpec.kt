@@ -3,6 +3,7 @@ package com.uchuhimo.konf.source
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.uchuhimo.konf.Config
+import com.uchuhimo.konf.SizeInBytes
 import com.uchuhimo.konf.assertTrue
 import com.uchuhimo.konf.toSizeInBytes
 import org.jetbrains.spek.api.dsl.given
@@ -132,6 +133,65 @@ object SourceLoadSpec : SubjectSpek<Config>({
 
                 assertTrue(Arrays.equals(subject[ConfigForLoad.nestedItem],
                         arrayOf(listOf(setOf(mapOf("a" to 1))))))
+
+                val x = subject
+                assertThat(subject[ConfigForLoad.pairItem], equalTo(1 to 2))
+
+                val classForLoad = ClassForLoad(
+                        boolean = false,
+                        int = 1,
+                        short = 2.toShort(),
+                        byte = 3.toByte(),
+                        bigInteger = BigInteger.valueOf(4),
+                        long = 4L,
+                        double = 1.5,
+                        float = -1.5f,
+                        bigDecimal = BigDecimal.valueOf(1.5),
+                        char = 'a',
+                        string = "string",
+                        offsetTime = OffsetTime.parse("10:15:30+01:00"),
+                        offsetDateTime = OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+                        zonedDateTime = ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"),
+                        localDate = LocalDate.parse("2007-12-03"),
+                        localTime = LocalTime.parse("10:15:30"),
+                        localDateTime = LocalDateTime.parse("2007-12-03T10:15:30"),
+                        date = Date.from(Instant.parse("2007-12-03T10:15:30Z")),
+                        year = Year.parse("2007"),
+                        yearMonth = YearMonth.parse("2007-12"),
+                        instant = Instant.parse("2007-12-03T10:15:30.00Z"),
+                        duration = "P2DT3H4M".toDuration(),
+                        simpleDuration = Duration.ofMillis(200),
+                        size = SizeInBytes.parse("10k"),
+                        enum = EnumForLoad.LABEL2,
+                        booleanArray = booleanArrayOf(true, false),
+                        nested = arrayOf(listOf(setOf(mapOf("a" to 1)))))
+                assertThat(subject[ConfigForLoad.classItem].boolean, equalTo(classForLoad.boolean))
+                assertThat(subject[ConfigForLoad.classItem].int, equalTo(classForLoad.int))
+                assertThat(subject[ConfigForLoad.classItem].short, equalTo(classForLoad.short))
+                assertThat(subject[ConfigForLoad.classItem].byte, equalTo(classForLoad.byte))
+                assertThat(subject[ConfigForLoad.classItem].bigInteger, equalTo(classForLoad.bigInteger))
+                assertThat(subject[ConfigForLoad.classItem].long, equalTo(classForLoad.long))
+                assertThat(subject[ConfigForLoad.classItem].double, equalTo(classForLoad.double))
+                assertThat(subject[ConfigForLoad.classItem].float, equalTo(classForLoad.float))
+                assertThat(subject[ConfigForLoad.classItem].bigDecimal, equalTo(classForLoad.bigDecimal))
+                assertThat(subject[ConfigForLoad.classItem].char, equalTo(classForLoad.char))
+                assertThat(subject[ConfigForLoad.classItem].string, equalTo(classForLoad.string))
+                assertThat(subject[ConfigForLoad.classItem].offsetTime, equalTo(classForLoad.offsetTime))
+                assertThat(subject[ConfigForLoad.classItem].offsetDateTime, equalTo(classForLoad.offsetDateTime))
+                assertThat(subject[ConfigForLoad.classItem].zonedDateTime, equalTo(classForLoad.zonedDateTime))
+                assertThat(subject[ConfigForLoad.classItem].localDate, equalTo(classForLoad.localDate))
+                assertThat(subject[ConfigForLoad.classItem].localTime, equalTo(classForLoad.localTime))
+                assertThat(subject[ConfigForLoad.classItem].localDateTime, equalTo(classForLoad.localDateTime))
+                assertThat(subject[ConfigForLoad.classItem].date, equalTo(classForLoad.date))
+                assertThat(subject[ConfigForLoad.classItem].year, equalTo(classForLoad.year))
+                assertThat(subject[ConfigForLoad.classItem].yearMonth, equalTo(classForLoad.yearMonth))
+                assertThat(subject[ConfigForLoad.classItem].instant, equalTo(classForLoad.instant))
+                assertThat(subject[ConfigForLoad.classItem].duration, equalTo(classForLoad.duration))
+                assertThat(subject[ConfigForLoad.classItem].simpleDuration, equalTo(classForLoad.simpleDuration))
+                assertThat(subject[ConfigForLoad.classItem].size, equalTo(classForLoad.size))
+                assertThat(subject[ConfigForLoad.classItem].enum, equalTo(classForLoad.enum))
+                assertTrue(Arrays.equals(subject[ConfigForLoad.classItem].booleanArray, classForLoad.booleanArray))
+                assertTrue(Arrays.equals(subject[ConfigForLoad.classItem].nested, classForLoad.nested))
             }
         }
     }
@@ -200,5 +260,44 @@ private val loadContent = mapOf<String, Any>(
                 mapOf("a" to 3, "b" to 4)
         ),
 
-        "nested" to listOf(listOf(listOf(mapOf("a" to 1))))
+        "nested" to listOf(listOf(listOf(mapOf("a" to 1)))),
+
+        "pair" to mapOf("first" to 1, "second" to 2),
+
+        "class" to mapOf(
+                "boolean" to false,
+
+                "int" to 1,
+                "short" to 2.toShort(),
+                "byte" to 3.toByte(),
+                "bigInteger" to BigInteger.valueOf(4),
+                "long" to 4L,
+
+                "double" to 1.5,
+                "float" to -1.5f,
+                "bigDecimal" to BigDecimal.valueOf(1.5),
+
+                "char" to 'a',
+
+                "string" to "string",
+                "offsetTime" to OffsetTime.parse("10:15:30+01:00"),
+                "offsetDateTime" to OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+                "zonedDateTime" to ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"),
+                "localDate" to LocalDate.parse("2007-12-03"),
+                "localTime" to LocalTime.parse("10:15:30"),
+                "localDateTime" to LocalDateTime.parse("2007-12-03T10:15:30"),
+                "date" to Date.from(Instant.parse("2007-12-03T10:15:30Z")),
+                "year" to Year.parse("2007"),
+                "yearMonth" to YearMonth.parse("2007-12"),
+                "instant" to Instant.parse("2007-12-03T10:15:30.00Z"),
+                "duration" to "P2DT3H4M".toDuration(),
+                "simpleDuration" to "200millis".toDuration(),
+                "size" to "10k".toSizeInBytes(),
+
+                "enum" to "LABEL2",
+
+                "booleanArray" to listOf(true, false),
+
+                "nested" to listOf(listOf(listOf(mapOf("a" to 1))))
+        )
 ).mapKeys { (key, _) -> "level1.level2.$key" }

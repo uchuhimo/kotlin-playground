@@ -35,6 +35,8 @@ open class MapSource(
         }
     }
 
+    override fun isMap(): Boolean = true
+
     override fun toMap(): Map<String, Source> = map.mapValues { (_, value) ->
         value.castToSource(context).apply { addInfo("inMap", this@MapSource.info.toDescription()) }
     }

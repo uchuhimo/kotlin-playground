@@ -71,6 +71,8 @@ open class FlatSource(
     private fun getValue(): String =
             map[prefix] ?: throw NoSuchPathException(this, prefix.toPath())
 
+    override fun isList(): Boolean = toList().isNotEmpty()
+
     override fun toList(): List<Source> {
         return generateSequence(0) { it + 1 }.map {
             getOrNull(it.toString().toPath())
@@ -80,6 +82,8 @@ open class FlatSource(
             it.apply { addInfo("inList", this@FlatSource.info.toDescription()) }
         }
     }
+
+    override fun isMap(): Boolean = toMap().isNotEmpty()
 
     override fun toMap(): Map<String, Source> {
         return map.keys.filter {
@@ -96,6 +100,8 @@ open class FlatSource(
             }
         }
     }
+
+    override fun isText(): Boolean = map.contains(prefix)
 
     override fun toText(): String = getValue()
 

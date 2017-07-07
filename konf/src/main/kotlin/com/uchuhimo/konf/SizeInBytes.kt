@@ -1,5 +1,6 @@
 package com.uchuhimo.konf
 
+import com.fasterxml.jackson.annotation.JsonCreator
 import com.typesafe.config.impl.ConfigImplUtil
 import com.uchuhimo.konf.source.ParseException
 import java.math.BigDecimal
@@ -19,6 +20,8 @@ data class SizeInBytes(val bytes: Long) {
          *
          * @return size in bytes
          */
+        @JsonCreator
+        @JvmStatic
         fun parse(input: String): SizeInBytes {
             val s = ConfigImplUtil.unicodeTrim(input)
             val unitString = getUnits(s)

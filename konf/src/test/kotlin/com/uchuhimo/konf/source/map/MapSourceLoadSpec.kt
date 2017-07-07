@@ -99,6 +99,45 @@ private val loadContent = mapOf("level1" to mapOf("level2" to
                         mapOf("a" to 3, "b" to 4)
                 ),
 
-                "nested" to listOf(listOf(listOf(mapOf("a" to 1))))
+                "nested" to listOf(listOf(listOf(mapOf("a" to 1)))),
+
+                "pair" to mapOf("first" to 1, "second" to 2),
+
+                "class" to mapOf(
+                        "boolean" to false,
+
+                        "int" to 1,
+                        "short" to 2.toShort(),
+                        "byte" to 3.toByte(),
+                        "bigInteger" to BigInteger.valueOf(4),
+                        "long" to 4L,
+
+                        "double" to 1.5,
+                        "float" to -1.5f,
+                        "bigDecimal" to BigDecimal.valueOf(1.5),
+
+                        "char" to 'a',
+
+                        "string" to "string",
+                        "offsetTime" to OffsetTime.parse("10:15:30+01:00"),
+                        "offsetDateTime" to OffsetDateTime.parse("2007-12-03T10:15:30+01:00"),
+                        "zonedDateTime" to ZonedDateTime.parse("2007-12-03T10:15:30+01:00[Europe/Paris]"),
+                        "localDate" to LocalDate.parse("2007-12-03"),
+                        "localTime" to LocalTime.parse("10:15:30"),
+                        "localDateTime" to LocalDateTime.parse("2007-12-03T10:15:30"),
+                        "date" to Date.from(Instant.parse("2007-12-03T10:15:30Z")),
+                        "year" to Year.parse("2007"),
+                        "yearMonth" to YearMonth.parse("2007-12"),
+                        "instant" to Instant.parse("2007-12-03T10:15:30.00Z"),
+                        "duration" to "P2DT3H4M".toDuration(),
+                        "simpleDuration" to "200millis".toDuration(),
+                        "size" to "10k".toSizeInBytes(),
+
+                        "enum" to "LABEL2",
+
+                        "booleanArray" to listOf(true, false),
+
+                        "nested" to listOf(listOf(listOf(mapOf("a" to 1))))
+                )
         )
 ))

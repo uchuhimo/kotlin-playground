@@ -66,6 +66,8 @@ class HoconValueSource(
 
     override fun getOrNull(path: Path): Source? = hoconSource.getOrNull(path)
 
+    override fun isList(): Boolean = type == ConfigValueType.LIST
+
     override fun toList(): List<Source> {
         checkType(type, ConfigValueType.LIST)
         return mutableListOf<Source>().apply {
@@ -76,6 +78,8 @@ class HoconValueSource(
             }
         }
     }
+
+    override fun isMap(): Boolean = type == ConfigValueType.OBJECT
 
     override fun toMap(): Map<String, Source> {
         checkType(type, ConfigValueType.OBJECT)
@@ -88,15 +92,21 @@ class HoconValueSource(
         }
     }
 
+    override fun isText(): Boolean = type == ConfigValueType.STRING
+
     override fun toText(): String {
         checkType(type, ConfigValueType.STRING)
         return value.unwrapped() as String
     }
 
+    override fun isBoolean(): Boolean = type == ConfigValueType.BOOLEAN
+
     override fun toBoolean(): Boolean {
         checkType(type, ConfigValueType.BOOLEAN)
         return value.unwrapped() as Boolean
     }
+
+    override fun isDouble(): Boolean = type == ConfigValueType.NUMBER && value.unwrapped() is Double
 
     override fun toDouble(): Double {
         try {
@@ -114,6 +124,8 @@ class HoconValueSource(
         }
     }
 
+    override fun isLong(): Boolean = type == ConfigValueType.NUMBER && value.unwrapped() is Long
+
     override fun toLong(): Long {
         try {
             checkType(type, ConfigValueType.NUMBER)
@@ -124,6 +136,8 @@ class HoconValueSource(
             return (value.unwrapped() as Int).toLong()
         }
     }
+
+    override fun isInt(): Boolean = type == ConfigValueType.NUMBER && value.unwrapped() is Int
 
     override fun toInt(): Int {
         checkType(type, ConfigValueType.NUMBER)

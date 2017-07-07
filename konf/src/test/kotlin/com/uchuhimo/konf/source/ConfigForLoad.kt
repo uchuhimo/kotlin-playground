@@ -72,8 +72,42 @@ object ConfigForLoad : ConfigSpec("level1.level2") {
     val listOfMapItem = required<List<Map<String, Int>>>("listOfMap")
 
     val nestedItem = required<Array<List<Set<Map<String, Int>>>>>("nested")
+
+    val pairItem = required<Pair<Int, Int>>("pair")
+
+    val classItem = required<ClassForLoad>("class")
 }
 
 enum class EnumForLoad {
     LABEL1, LABEL2, LABEL3
 }
+
+data class ClassForLoad(
+        val boolean: Boolean,
+        val int: Int,
+        val short: Short,
+        val byte: Byte,
+        val bigInteger: BigInteger,
+        val long: Long,
+        val double: Double,
+        val float: Float,
+        val bigDecimal: BigDecimal?,
+        val char: Char,
+        val string: String,
+        val offsetTime: OffsetTime,
+        val offsetDateTime: OffsetDateTime,
+        val zonedDateTime: ZonedDateTime,
+        val localDate: LocalDate,
+        val localTime: LocalTime,
+        val localDateTime: LocalDateTime,
+        val date: Date,
+        val year: Year,
+        val yearMonth: YearMonth,
+        val instant: Instant,
+        val duration: Duration,
+        val simpleDuration: Duration,
+        val size: SizeInBytes,
+        val enum: EnumForLoad,
+        val booleanArray: BooleanArray,
+        val nested: Array<List<Set<Map<String, Int>>>>
+)

@@ -1,9 +1,11 @@
 package com.uchuhimo.konf
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.uchuhimo.collections.mutableBiMapOf
 import com.uchuhimo.konf.annotation.JavaApi
 import com.uchuhimo.konf.source.DefaultLoaders
 import com.uchuhimo.konf.source.Source
+import com.uchuhimo.konf.source.createDefaultMapper
 import com.uchuhimo.konf.source.loadFromSource
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -51,6 +53,8 @@ interface Config : ConfigGetter {
 
     val loadFrom: DefaultLoaders get() = DefaultLoaders(this)
 
+    val mapper: ObjectMapper
+
     @Suppress("NAME_SHADOWING", "UNUSED_ANONYMOUS_PARAMETER")
     fun visitAsTree(
             onEnterNode: (List<String>) -> Unit = { path -> },
@@ -66,7 +70,8 @@ interface Config : ConfigGetter {
 
 private class ConfigImpl private constructor(
         override val name: String,
-        override val parent: ConfigImpl?
+        override val parent: ConfigImpl?,
+        override val mapper: ObjectMapper = createDefaultMapper()
 ) : Config {
     constructor() : this("", null)
 
@@ -393,7 +398,7 @@ private class ConfigImpl private constructor(
 
     override fun withLayer(name: String): Config {
         lock.write { hasChildren = true }
-        return ConfigImpl(name, this)
+        return ConfigImpl(name, this, mapper)
     }
 
     private sealed class ValueState {
