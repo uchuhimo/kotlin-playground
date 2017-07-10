@@ -9,7 +9,7 @@ fun main(args: Array<String>) {
     val outerB = fun(): Int {
         val b = 2
         return b
-    }()
+    } ()
     println(outerB)
 
     // doc here
@@ -18,6 +18,6 @@ fun main(args: Array<String>) {
     }
     val outerC = {
         3
-    }()
+    } ()
     println(outerC)
 }

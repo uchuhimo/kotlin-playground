@@ -3,6 +3,7 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.java text eol=lf
+*.kt text eol=lf
 *.md text
 *.properties text eol=lf
 *.scala text eol=lf

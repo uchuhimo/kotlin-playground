@@ -87,7 +87,7 @@ private class ConfigImpl constructor(
         var currentConfig = this@ConfigImpl
         var current = currentConfig.nameByItem.keys.iterator()
 
-        override tailrec fun hasNext(): Boolean {
+        tailrec override fun hasNext(): Boolean {
             if (current.hasNext()) {
                 return true
             } else {
@@ -336,7 +336,7 @@ private class ConfigImpl constructor(
             var currentConfig = this@ConfigImpl
             var current = currentConfig.specsInLayer.iterator()
 
-            override tailrec fun hasNext(): Boolean {
+            tailrec override fun hasNext(): Boolean {
                 if (current.hasNext()) {
                     return true
                 } else {

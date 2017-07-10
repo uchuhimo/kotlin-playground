@@ -1,6 +1,6 @@
 package com.uchuhimo.datamodel
 
-import java.util.*
+import java.util.Arrays
 import kotlin.reflect.KClass
 
 interface InputStream {

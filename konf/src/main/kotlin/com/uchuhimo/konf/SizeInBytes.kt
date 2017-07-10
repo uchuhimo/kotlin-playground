@@ -104,7 +104,7 @@ data class SizeInBytes(val bytes: Long) {
                                 map.put(firstUpper + "iB", unit) // 512MiB
                             } else if (unit.powerOf == 1000) {
                                 if (unit.power == 1) {
-                                    map.put(first + "B", unit)      // 512kB
+                                    map.put(first + "B", unit) // 512kB
                                 } else {
                                     map.put(firstUpper + "B", unit) // 512MB
                                 }

@@ -3,11 +3,10 @@ package com.uchuhimo.konf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import java.util.HashMap;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
-import java.util.HashMap;
 
 @DisplayName("test Java API of Config")
 class ConfigJavaApiTest {

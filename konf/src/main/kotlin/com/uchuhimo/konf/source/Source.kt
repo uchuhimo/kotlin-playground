@@ -40,7 +40,11 @@ import java.time.YearMonth
 import java.time.ZoneOffset
 import java.time.ZonedDateTime
 import java.time.format.DateTimeParseException
-import java.util.*
+import java.util.Date
+import java.util.SortedMap
+import java.util.SortedSet
+import java.util.TreeMap
+import java.util.TreeSet
 import kotlin.Byte
 import kotlin.Char
 import kotlin.Double
@@ -49,22 +53,17 @@ import kotlin.Int
 import kotlin.Long
 import kotlin.Short
 import kotlin.String
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.HashSet
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 interface Source {
     val description: String get() = (info + context).toDescription()
 
     val context: Map<String, String>
 
-    fun addContext(name: String, value: String): Unit
+    fun addContext(name: String, value: String)
 
     val info: Map<String, String>
 
-    fun addInfo(name: String, value: String): Unit
+    fun addInfo(name: String, value: String)
 
     fun contains(path: Path): Boolean
 

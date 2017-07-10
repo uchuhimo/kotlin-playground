@@ -5,7 +5,7 @@ import com.uchuhimo.konf.source.SourceProvider
 import com.uchuhimo.konf.source.base.FlatSource
 import java.io.InputStream
 import java.io.Reader
-import java.util.*
+import java.util.Properties
 
 object PropertiesProvider : SourceProvider {
     private fun Properties.toMap(): Map<String, String> {

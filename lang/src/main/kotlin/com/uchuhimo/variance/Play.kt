@@ -54,7 +54,6 @@ class Test<in In, out Out> {
 
     fun returnList(): List<Out>? = null
 
-
     // 'out' occurs in 'invariant'
     // fun returnMutableList(): MutableList<Out>? = null
 

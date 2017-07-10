@@ -18,7 +18,7 @@ import java.time.OffsetTime
 import java.time.Year
 import java.time.YearMonth
 import java.time.ZonedDateTime
-import java.util.*
+import java.util.Date
 
 object MapSourceLoadSpec : SubjectSpek<Config>({
 

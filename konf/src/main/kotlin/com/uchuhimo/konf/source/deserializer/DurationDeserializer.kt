@@ -48,5 +48,4 @@ object DurationDeserializer : JsonDeserializer<Duration>() {
         throw context.mappingException("Expected type float, integer, or string.")
     }
 
-
 }
