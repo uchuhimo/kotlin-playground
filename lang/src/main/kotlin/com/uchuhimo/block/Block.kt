@@ -9,8 +9,8 @@ fun main(args: Array<String>) {
     val outerB = fun(): Int {
         val b = 2
         return b
-    } ()
-    println(outerB)
+    }
+    println(outerB())
 
     // doc here
     run {
@@ -18,6 +18,6 @@ fun main(args: Array<String>) {
     }
     val outerC = {
         3
-    } ()
-    println(outerC)
+    }
+    println(outerC())
 }
