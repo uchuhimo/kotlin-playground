@@ -45,8 +45,8 @@ class ConfigJavaApiTest {
   @Test
   @DisplayName("test fluent API to load from loader")
   void loadFromLoader() {
-    final Config newConfig = config.loadFrom().hocon.string(
-        NetworkBufferInJava.size.getName() + " = 1024");
+    final Config newConfig =
+        config.loadFrom().hocon.string(NetworkBufferInJava.size.getName() + " = 1024");
     assertThat(newConfig.get(NetworkBufferInJava.size), equalTo(1024));
   }
 
@@ -97,7 +97,8 @@ class ConfigJavaApiTest {
   @Test
   @DisplayName("test `lazySet(String, Function1<ConfigGetter, T>)`")
   void lazySetWithName() {
-    config.lazySet(NetworkBufferInJava.maxSize.getName(), it -> it.get(NetworkBufferInJava.size) * 4);
+    config.lazySet(
+        NetworkBufferInJava.maxSize.getName(), it -> it.get(NetworkBufferInJava.size) * 4);
     config.set(NetworkBufferInJava.size, 1024);
     assertThat(config.get(NetworkBufferInJava.maxSize), equalTo(1024 * 4));
   }

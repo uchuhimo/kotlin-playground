@@ -26,20 +26,24 @@ public class YDepend {
   }
 
   public void testAtLeastOnce() {
-    new Thread(() -> {
-      aHappened = true;
-      if (bHappened) {
-        invokeAtLeastOnceAfterAB();
-      }
-      latch.countDown();
-    }).start();
-    new Thread(() -> {
-      bHappened = true;
-      if (aHappened) {
-        invokeAtLeastOnceAfterAB();
-      }
-      latch.countDown();
-    }).start();
+    new Thread(
+            () -> {
+              aHappened = true;
+              if (bHappened) {
+                invokeAtLeastOnceAfterAB();
+              }
+              latch.countDown();
+            })
+        .start();
+    new Thread(
+            () -> {
+              bHappened = true;
+              if (aHappened) {
+                invokeAtLeastOnceAfterAB();
+              }
+              latch.countDown();
+            })
+        .start();
     try {
       latch.await();
     } catch (InterruptedException e) {
@@ -48,20 +52,24 @@ public class YDepend {
   }
 
   public void testOnce() {
-    new Thread(() -> {
-      aHappened = true;
-      if (bHappened) {
-        invokeOnceAfterAB();
-      }
-      latch.countDown();
-    }).start();
-    new Thread(() -> {
-      bHappened = true;
-      if (aHappened) {
-        invokeOnceAfterAB();
-      }
-      latch.countDown();
-    }).start();
+    new Thread(
+            () -> {
+              aHappened = true;
+              if (bHappened) {
+                invokeOnceAfterAB();
+              }
+              latch.countDown();
+            })
+        .start();
+    new Thread(
+            () -> {
+              bHappened = true;
+              if (aHappened) {
+                invokeOnceAfterAB();
+              }
+              latch.countDown();
+            })
+        .start();
     try {
       latch.await();
     } catch (InterruptedException e) {

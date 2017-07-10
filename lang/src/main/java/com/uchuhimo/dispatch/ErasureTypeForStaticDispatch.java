@@ -1,17 +1,11 @@
 package com.uchuhimo.dispatch;
 
 public class ErasureTypeForStaticDispatch {
-  public interface Trait {
+  public interface Trait {}
 
-  }
+  public static class A implements Trait {}
 
-  public static class A implements Trait {
-
-  }
-
-  public static class B implements Trait {
-
-  }
+  public static class B implements Trait {}
 
   public static void overload(A a) {
     System.out.println("a");

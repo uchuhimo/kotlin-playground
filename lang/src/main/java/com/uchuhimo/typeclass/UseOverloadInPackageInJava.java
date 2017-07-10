@@ -9,17 +9,19 @@ import java.util.ArrayList;
 public class UseOverloadInPackageInJava {
   public static void main(String[] args) {
     log("testAtLeastOnce");
-    log(new ArrayList<Base>() {
-      {
-        add(new Base());
-        add(new Base());
-      }
-    });
-    log(new ArrayList<Base>() {
-      {
-        add(new Derived());
-        add(new Derived());
-      }
-    });
+    log(
+        new ArrayList<Base>() {
+          {
+            add(new Base());
+            add(new Base());
+          }
+        });
+    log(
+        new ArrayList<Base>() {
+          {
+            add(new Derived());
+            add(new Derived());
+          }
+        });
   }
 }
