@@ -5,7 +5,7 @@ kotlin {
 }
 
 ext {
-    kotlinxCoroutinesVersion = "0.15"
+    kotlinxCoroutinesVersion = "0.16"
 }
 
 dependencies {
